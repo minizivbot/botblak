@@ -1,4 +1,4 @@
-# TradeLog — Futures Trading Journal
+# TradeZone — ICT Futures Trading Journal
 
 A full-stack trading journal built with **Next.js (App Router) + TypeScript + Tailwind CSS**,
 **SQLite + Prisma** (Postgres in production), and **Recharts**. Dark-mode UI, mobile responsive,

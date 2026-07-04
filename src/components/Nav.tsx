@@ -59,7 +59,7 @@ function Logo() {
           <path d="M13 4h4v4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      <span className="text-base font-bold tracking-tight">TradeLog</span>
+      <span className="text-base font-bold tracking-tight">TradeZone</span>
     </span>
   );
 }

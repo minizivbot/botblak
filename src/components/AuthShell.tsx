@@ -9,7 +9,7 @@ export function AuthShell({ title, children }: { title: string; children: React.
               <path d="M13 4h4v4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <span className="text-lg font-bold tracking-tight">TradeLog</span>
+          <span className="text-lg font-bold tracking-tight">TradeZone</span>
         </div>
         <p className="mb-5 text-sm text-muted">{title}</p>
         {children}

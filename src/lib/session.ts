@@ -4,12 +4,12 @@
  * Cookie value: "<userId>.<hmacSha256(userId, AUTH_SECRET)>".
  */
 
-export const AUTH_COOKIE = "tradelog_session";
+export const AUTH_COOKIE = "tradezone_session";
 
 function secret(): string {
   // Set AUTH_SECRET in production (see README). The fallback keeps local dev
   // zero-config; sessions just reset if it changes.
-  return process.env.AUTH_SECRET || "tradelog-dev-secret-change-me";
+  return process.env.AUTH_SECRET || "tradezone-dev-secret-change-me";
 }
 
 async function hmac(message: string): Promise<string> {

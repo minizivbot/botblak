@@ -25,7 +25,7 @@ import { WeekdayPnlChart } from "@/components/charts/WeekdayPnlChart";
 import { CalendarHeatmap } from "@/components/charts/CalendarHeatmap";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Dashboard — TradeLog" };
+export const metadata = { title: "Dashboard — TradeZone" };
 
 export default async function DashboardPage({
   searchParams,
