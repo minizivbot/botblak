@@ -5,6 +5,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { TradesClient } from "@/components/TradesClient";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Trades" };
 
 export default async function TradesPage({
   searchParams,

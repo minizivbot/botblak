@@ -1,6 +1,6 @@
 import { ImportClient } from "@/components/ImportClient";
 
-export const metadata = { title: "Import & Sync — Trading Journal" };
+export const metadata = { title: "Import & Sync" };
 
 export default function ImportPage() {
   return (

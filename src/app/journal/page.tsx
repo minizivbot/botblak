@@ -3,6 +3,7 @@ import { toTradeDTO } from "@/lib/dto";
 import { JournalClient } from "@/components/JournalClient";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Journal" };
 
 export default async function JournalPage() {
   const [entries, trades, settings] = await Promise.all([

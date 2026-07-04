@@ -1,6 +1,6 @@
 import { SettingsClient } from "@/components/SettingsClient";
 
-export const metadata = { title: "Settings — Trading Journal" };
+export const metadata = { title: "Settings" };
 
 export default function SettingsPage() {
   return (

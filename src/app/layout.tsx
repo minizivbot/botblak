@@ -3,7 +3,7 @@ import "./globals.css";
 import { Nav } from "@/components/Nav";
 
 export const metadata: Metadata = {
-  title: "Trading Journal",
+  title: { default: "TradeLog", template: "%s — TradeLog" },
   description: "Log trades, sync brokers, and review your performance.",
 };
 
