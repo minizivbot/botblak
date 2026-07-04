@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { TradeDTO } from "@/lib/dto";
 import { tradePnl } from "@/lib/pnl";
 import { fmtMoney, fmtSignedMoney, fmtDateTime, fmtNum } from "@/lib/format";
@@ -9,6 +9,7 @@ import { TradeFormModal } from "./TradeFormModal";
 
 export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currency: string }) {
   const router = useRouter();
+  const search = useSearchParams().toString();
   const [modal, setModal] = useState<{ open: boolean; trade: TradeDTO | null }>({ open: false, trade: null });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +34,20 @@ export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currenc
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-muted">{trades.length} trades</p>
-        <button className="btn-primary" onClick={() => setModal({ open: true, trade: null })}>
-          + Add trade
-        </button>
+        <div className="flex gap-2">
+          <a
+            className="btn-ghost"
+            href={`/api/export/csv${search ? `?${search}` : ""}`}
+            download
+          >
+            Export CSV
+          </a>
+          <button className="btn-primary" onClick={() => setModal({ open: true, trade: null })}>
+            + Add trade
+          </button>
+        </div>
       </div>
 
       {error && <p className="rounded-lg border border-loss/40 bg-loss/10 px-3 py-2 text-sm text-loss">{error}</p>}

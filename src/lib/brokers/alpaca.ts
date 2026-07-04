@@ -1,4 +1,5 @@
-import { BrokerAdapter, BrokerError, NormalizedTrade, SyncResult } from "./types";
+import { BrokerAdapter, BrokerError, SyncResult } from "./types";
+import { pairFillsFifo, type Fill } from "./fifo";
 
 type AlpacaOrder = {
   id: string;
@@ -14,8 +15,7 @@ type AlpacaOrder = {
  * Alpaca adapter (paper trading by default).
  *
  * Fetches closed, filled orders from the Alpaca Trading API and pairs them
- * FIFO per symbol into round-trip trades: a buy opens (or covers) and a sell
- * closes (or opens a short), matched in fill-time order.
+ * FIFO per symbol into round-trip trades.
  */
 export const alpacaAdapter: BrokerAdapter = {
   id: "alpaca",
@@ -70,82 +70,21 @@ export const alpacaAdapter: BrokerAdapter = {
       after = last;
     }
 
-    const fills = orders
+    const fills: Fill[] = orders
       .filter((o) => o.status === "filled" && o.filled_at && o.filled_avg_price)
-      .sort((a, b) => new Date(a.filled_at!).getTime() - new Date(b.filled_at!).getTime());
+      .map((o) => ({
+        id: o.id,
+        symbol: o.symbol,
+        side: o.side,
+        qty: parseFloat(o.filled_qty),
+        price: parseFloat(o.filled_avg_price!),
+        date: new Date(o.filled_at!),
+        fee: 0, // Alpaca is commission-free for stocks
+      }));
 
     return {
-      trades: pairFillsFifo(fills),
+      trades: pairFillsFifo(fills, "alpaca"),
       detail: `Fetched ${orders.length} closed orders (${fills.length} filled) from Alpaca.`,
     };
   },
 };
-
-type OpenLot = {
-  direction: "LONG" | "SHORT";
-  qty: number;
-  price: number;
-  date: Date;
-  orderId: string;
-};
-
-/** Pair filled orders into round-trip trades, FIFO per symbol. */
-export function pairFillsFifo(fills: AlpacaOrder[]): NormalizedTrade[] {
-  const lots = new Map<string, OpenLot[]>();
-  const trades: NormalizedTrade[] = [];
-
-  for (const f of fills) {
-    let qty = parseFloat(f.filled_qty);
-    const price = parseFloat(f.filled_avg_price!);
-    const date = new Date(f.filled_at!);
-    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(price)) continue;
-
-    const queue = lots.get(f.symbol) ?? [];
-    lots.set(f.symbol, queue);
-    const closes: "LONG" | "SHORT" = f.side === "sell" ? "LONG" : "SHORT";
-    const opens: "LONG" | "SHORT" = f.side === "buy" ? "LONG" : "SHORT";
-
-    // First close out any opposite-direction lots FIFO...
-    while (qty > 0 && queue.length && queue[0].direction === closes) {
-      const lot = queue[0];
-      const matched = Math.min(qty, lot.qty);
-      trades.push({
-        symbol: f.symbol,
-        direction: lot.direction,
-        entryPrice: lot.price,
-        exitPrice: price,
-        size: matched,
-        fees: 0, // Alpaca is commission-free for stocks
-        entryDate: lot.date,
-        exitDate: date,
-        externalId: `alpaca:${lot.orderId}:${f.id}`,
-      });
-      lot.qty -= matched;
-      qty -= matched;
-      if (lot.qty <= 1e-9) queue.shift();
-    }
-    // ...then whatever remains opens a new lot.
-    if (qty > 0) {
-      queue.push({ direction: opens, qty, price, date, orderId: f.id });
-    }
-  }
-
-  // Remaining lots are still-open positions — import them as open trades.
-  for (const [symbol, queue] of lots) {
-    for (const lot of queue) {
-      trades.push({
-        symbol,
-        direction: lot.direction,
-        entryPrice: lot.price,
-        exitPrice: null,
-        size: lot.qty,
-        fees: 0,
-        entryDate: lot.date,
-        exitDate: null,
-        externalId: `alpaca:${lot.orderId}:open`,
-      });
-    }
-  }
-
-  return trades.sort((a, b) => a.entryDate.getTime() - b.entryDate.getTime());
-}

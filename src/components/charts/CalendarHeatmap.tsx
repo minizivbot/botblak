@@ -111,7 +111,7 @@ export function CalendarHeatmap({ daily, currency, weeks = 16 }: Props) {
           <span
             key={v}
             className="h-3 w-3 rounded-[3px] border border-edge/60"
-            style={{ backgroundColor: v === 0 ? "#383835" : cellColor(v * max) }}
+            style={{ backgroundColor: v === 0 ? "#343943" : cellColor(v * max) }}
           />
         ))}
         <span>Profit</span>

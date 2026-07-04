@@ -2,19 +2,20 @@
 
 /* Dark-only design tokens (validated against surface #1a1a19) */
 @theme {
-  --color-page: #0d0d0d;
-  --color-surface: #1a1a19;
-  --color-raised: #242423;
-  --color-ink: #ffffff;
-  --color-ink-2: #c3c2b7;
-  --color-muted: #898781;
-  --color-grid: #2c2c2a;
-  --color-edge: rgba(255, 255, 255, 0.1);
+  --color-page: #0b0c0e;
+  --color-surface: #16181c;
+  --color-raised: #1f2228;
+  --color-ink: #f4f5f7;
+  --color-ink-2: #c0c4cc;
+  --color-muted: #858b96;
+  --color-grid: #262a31;
+  --color-edge: rgba(255, 255, 255, 0.08);
+  --color-edge-strong: rgba(255, 255, 255, 0.14);
   --color-accent: #3987e5;
   --color-accent-deep: #1c5cab;
-  --color-profit: #0ca30c;
+  --color-profit: #21c162;
   --color-profit-mark: #199e70;
-  --color-loss: #e66767;
+  --color-loss: #f0645f;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -23,14 +24,21 @@ html {
 }
 
 body {
-  background: var(--color-page);
+  background:
+    radial-gradient(1200px 500px at 80% -10%, rgba(57, 135, 229, 0.07), transparent 60%),
+    radial-gradient(900px 400px at 0% 0%, rgba(25, 158, 112, 0.05), transparent 55%),
+    var(--color-page);
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
 
+::selection {
+  background: rgba(57, 135, 229, 0.35);
+}
+
 /* Form controls */
 .field {
-  @apply w-full rounded-lg border border-edge bg-raised px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none;
+  @apply w-full rounded-lg border border-edge bg-raised/70 px-3 py-2 text-sm text-ink shadow-sm transition-colors placeholder:text-muted hover:border-edge-strong focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25;
 }
 .field-label {
   @apply mb-1 block text-xs font-medium text-ink-2;
@@ -38,17 +46,34 @@ body {
 .btn-primary,
 .btn-ghost,
 .btn-danger {
-  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50;
 }
 .btn-primary {
-  @apply bg-accent text-white hover:bg-accent-deep;
+  @apply bg-accent text-white shadow-[0_2px_12px_rgba(57,135,229,0.35)] hover:bg-accent-deep hover:shadow-[0_2px_16px_rgba(57,135,229,0.5)];
 }
 .btn-ghost {
-  @apply border border-edge bg-transparent text-ink-2 hover:bg-raised hover:text-ink;
+  @apply border border-edge bg-transparent text-ink-2 hover:border-edge-strong hover:bg-raised hover:text-ink;
 }
 .btn-danger {
   @apply border border-loss/40 bg-transparent text-loss hover:bg-loss/10;
 }
+
+/* Cards & chrome */
 .card {
-  @apply rounded-xl border border-edge bg-surface p-4 sm:p-5;
+  @apply rounded-2xl border border-edge bg-surface p-4 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_8px_24px_rgba(0,0,0,0.25)] sm:p-5;
+}
+.card-title {
+  @apply mb-3 text-[11px] font-semibold tracking-[0.12em] text-muted uppercase;
+}
+.chip {
+  @apply cursor-pointer rounded-full border border-edge px-3 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-edge-strong hover:text-ink;
+}
+.chip-active {
+  @apply border-accent/60 bg-accent/15 text-ink;
+}
+.badge-long {
+  @apply rounded-md bg-profit-mark/15 px-1.5 py-0.5 text-xs font-semibold text-profit;
+}
+.badge-short {
+  @apply rounded-md bg-loss/15 px-1.5 py-0.5 text-xs font-semibold text-loss;
 }

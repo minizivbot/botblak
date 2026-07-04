@@ -2,12 +2,12 @@
 
 /** Shared chart tokens (dark surface #1a1a19, palette validated via dataviz checks). */
 export const chart = {
-  grid: "#2c2c2a",
-  axis: "#383835",
-  tick: "#898781",
+  grid: "#262a31",
+  axis: "#343943",
+  tick: "#858b96",
   accent: "#3987e5",
   profit: "#199e70",
-  loss: "#e66767",
+  loss: "#e66767", // marks keep the CVD-validated red; text uses the brighter --color-loss
 };
 
 export function fmtCompactMoney(v: number, currency = "USD"): string {

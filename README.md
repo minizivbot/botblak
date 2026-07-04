@@ -10,8 +10,9 @@ A full-stack trading journal built with **Next.js (App Router) + TypeScript + Ta
 - **Broker sync**
   - **CSV import** with presets for **MetaTrader 4**, **MetaTrader 5**, and a **generic CSV** with
     manual column mapping and a preview before importing. Duplicate rows (same ticket id) are skipped.
-  - **Broker API adapters** — a clean `BrokerAdapter` interface with a working **Alpaca**
-    (paper-trading) adapter that pulls filled orders and pairs them FIFO into round-trip trades.
+  - **Broker API adapters** — a clean `BrokerAdapter` interface with two working adapters:
+    **Alpaca** (paper trading, API keys) and **Tradovate** (futures — just your username and
+    password). Both pull fills and pair them FIFO into round-trip trades, deduped on re-sync.
 - **Dashboard** — total P&L, win rate, profit factor, average win/loss, expectancy, max drawdown,
   best/worst trade; equity curve; P&L by day/week/month; P&L by symbol and by strategy;
   calendar heatmap of daily P&L.
@@ -61,6 +62,26 @@ To wipe and re-seed at any time: delete `prisma/dev.db` and run `npm run setup` 
 
 Keys are read server-side from `process.env` only. The client only ever sees a boolean
 "configured / not configured" status. `.env` is git-ignored — never commit it.
+
+## Adding your broker credentials (Tradovate)
+
+Tradovate's API signs in with your normal account credentials — no API key needed for
+your own account:
+
+```ini
+TRADOVATE_USERNAME="your-username"
+TRADOVATE_PASSWORD="your-password"
+TRADOVATE_ENV="demo"        # or "live"
+```
+
+Restart the dev server, then **Import & Sync → Tradovate → Sync now**. Futures P&L is
+computed with each product's value-per-point (e.g. ES = $50/pt), folded into the trade
+size so all dashboard stats are in real dollars. If you have registered an API
+application with Tradovate you can additionally set `TRADOVATE_CID` and `TRADOVATE_SEC`.
+
+> **TradingView note:** TradingView has no public API for pulling your trade history, so
+> it can't be synced with a username/password. Export your paper-trading history to CSV
+> from TradingView and import it with the **Generic CSV** preset instead.
 
 ## Adding another broker
 

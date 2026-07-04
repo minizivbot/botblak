@@ -13,10 +13,13 @@ export type StatsTrade = {
   strategy: string | null;
 };
 
+export type DirectionStats = { count: number; winRate: number | null; pnl: number };
+
 export type DashboardStats = {
   totalPnl: number;
   tradeCount: number;
   closedCount: number;
+  openCount: number;
   winRate: number | null;
   profitFactor: number | null;
   avgWin: number | null;
@@ -25,6 +28,15 @@ export type DashboardStats = {
   maxDrawdown: number;
   bestTrade: { symbol: string; pnl: number } | null;
   worstTrade: { symbol: string; pnl: number } | null;
+  /** Average holding time of closed trades, in milliseconds. */
+  avgHoldMs: number | null;
+  maxWinStreak: number;
+  maxLossStreak: number;
+  /** Current streak: positive = consecutive wins, negative = consecutive losses. */
+  currentStreak: number;
+  totalFees: number;
+  long: DirectionStats;
+  short: DirectionStats;
 };
 
 export type ClosedTrade = StatsTrade & { pnl: number; closedAt: Date };
@@ -73,10 +85,35 @@ export function computeStats(trades: StatsTrade[], startingBalance: number): Das
     if (!worst || t.pnl < worst.pnl) worst = t;
   }
 
+  // Streaks over closed trades in exit order (breakeven trades reset both).
+  let maxWinStreak = 0;
+  let maxLossStreak = 0;
+  let run = 0; // positive = wins, negative = losses
+  for (const t of closed) {
+    if (t.pnl > 0) run = run > 0 ? run + 1 : 1;
+    else if (t.pnl < 0) run = run < 0 ? run - 1 : -1;
+    else run = 0;
+    maxWinStreak = Math.max(maxWinStreak, run);
+    maxLossStreak = Math.max(maxLossStreak, -run);
+  }
+
+  const holdTimes = closed.map((t) => t.closedAt.getTime() - t.entryDate.getTime()).filter((ms) => ms >= 0);
+  const avgHoldMs = holdTimes.length ? holdTimes.reduce((s, v) => s + v, 0) / holdTimes.length : null;
+
+  const dirStats = (dir: "LONG" | "SHORT"): DirectionStats => {
+    const of = closed.filter((t) => t.direction === dir);
+    return {
+      count: of.length,
+      winRate: of.length ? of.filter((t) => t.pnl > 0).length / of.length : null,
+      pnl: of.reduce((s, t) => s + t.pnl, 0),
+    };
+  };
+
   return {
     totalPnl,
     tradeCount: trades.length,
     closedCount: closed.length,
+    openCount: trades.filter((t) => t.exitPrice == null).length,
     winRate,
     profitFactor,
     avgWin,
@@ -85,6 +122,13 @@ export function computeStats(trades: StatsTrade[], startingBalance: number): Das
     maxDrawdown,
     bestTrade: best ? { symbol: best.symbol, pnl: best.pnl } : null,
     worstTrade: worst ? { symbol: worst.symbol, pnl: worst.pnl } : null,
+    avgHoldMs,
+    maxWinStreak,
+    maxLossStreak,
+    currentStreak: run,
+    totalFees: closed.reduce((s, t) => s + t.fees, 0),
+    long: dirStats("LONG"),
+    short: dirStats("SHORT"),
   };
 }
 
@@ -140,6 +184,32 @@ export function pnlByGroup(trades: StatsTrade[], key: "symbol" | "strategy") {
   return [...buckets.entries()]
     .map(([label, { pnl, count }]) => ({ label, pnl, count }))
     .sort((a, b) => b.pnl - a.pnl);
+}
+
+/** Drawdown below the running equity peak after each closed trade (≤ 0, in currency). */
+export function drawdownCurve(trades: StatsTrade[], startingBalance: number) {
+  let equity = startingBalance;
+  let peak = startingBalance;
+  const points = [{ date: null as string | null, dd: 0 }];
+  for (const t of closedTrades(trades)) {
+    equity += t.pnl;
+    peak = Math.max(peak, equity);
+    points.push({ date: t.closedAt.toISOString(), dd: equity - peak });
+  }
+  return points;
+}
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** Net P&L and trade count per weekday (Mon..Sun), by exit day. */
+export function pnlByWeekday(trades: StatsTrade[]) {
+  const buckets = WEEKDAYS.map((label) => ({ label, pnl: 0, count: 0 }));
+  for (const t of closedTrades(trades)) {
+    const idx = (t.closedAt.getUTCDay() + 6) % 7; // Mon = 0
+    buckets[idx].pnl += t.pnl;
+    buckets[idx].count += 1;
+  }
+  return buckets;
 }
 
 /** Daily net P&L keyed by "YYYY-MM-DD", for the calendar heatmap. */
