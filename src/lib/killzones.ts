@@ -42,6 +42,25 @@ export function killzone(d: Date | string): Killzone {
   return "Off-hours";
 }
 
+/** ICT concepts a trader can tag on a trade (plus free-text custom ones). */
+export const ICT_CONCEPTS = [
+  "FVG",
+  "Inverse FVG",
+  "Order Block",
+  "Breaker",
+  "BPR",
+  "Liquidity Sweep",
+  "Equal Highs/Lows",
+  "MSS",
+  "BOS",
+  "SMT Divergence",
+  "OTE",
+  "Premium/Discount",
+  "Turtle Soup",
+  "Draw on Liquidity",
+  "NWOG/NDOG",
+];
+
 export const ICT_SETUPS = [
   "Silver Bullet",
   "Judas Swing",

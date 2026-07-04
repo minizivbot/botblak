@@ -12,6 +12,7 @@ export type TradeDTO = {
   entryDate: string;
   exitDate: string | null;
   strategy: string | null;
+  concepts: string | null;
   notes: string | null;
   screenshotPath: string | null;
   source: string;
@@ -29,6 +30,7 @@ export function toTradeDTO(t: Trade): TradeDTO {
     entryDate: t.entryDate.toISOString(),
     exitDate: t.exitDate?.toISOString() ?? null,
     strategy: t.strategy,
+    concepts: t.concepts,
     notes: t.notes,
     screenshotPath: t.screenshotPath,
     source: t.source,

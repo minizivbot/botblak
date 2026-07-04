@@ -112,7 +112,14 @@ export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currenc
                   <td className={`px-2 py-2.5 text-right font-medium tabular-nums ${pnl == null ? "text-muted" : pnl >= 0 ? "text-profit" : "text-loss"}`}>
                     {pnl == null ? "—" : fmtSignedMoney(pnl, currency)}
                   </td>
-                  <td className="px-2 py-2.5 text-ink-2">{t.strategy ?? <span className="text-muted">—</span>}</td>
+                  <td className="px-2 py-2.5 text-ink-2">
+                    {t.strategy ?? <span className="text-muted">—</span>}
+                    {t.concepts && (
+                      <span className="mt-0.5 block max-w-40 truncate text-xs text-muted" title={t.concepts}>
+                        {t.concepts}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-2 py-2.5">
                     {t.screenshotPath ? (
                       <a href={t.screenshotPath} target="_blank" rel="noreferrer" className="text-accent hover:underline">

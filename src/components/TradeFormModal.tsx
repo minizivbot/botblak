@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { TradeDTO } from "@/lib/dto";
-import { ICT_SETUPS } from "@/lib/killzones";
+import { ICT_SETUPS, ICT_CONCEPTS } from "@/lib/killzones";
 
 type Props = {
   trade: TradeDTO | null; // null = create
@@ -27,6 +27,10 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
     strategy: trade?.strategy ?? "",
     notes: trade?.notes ?? "",
   });
+  const [concepts, setConcepts] = useState<string[]>(
+    trade?.concepts ? trade.concepts.split(",").map((c) => c.trim()).filter(Boolean) : [],
+  );
+  const [customConcept, setCustomConcept] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [removeShot, setRemoveShot] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +38,15 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const toggleConcept = (c: string) =>
+    setConcepts((list) => (list.includes(c) ? list.filter((x) => x !== c) : [...list, c]));
+
+  const addCustomConcept = () => {
+    const c = customConcept.trim();
+    if (c && !concepts.includes(c)) setConcepts((list) => [...list, c]);
+    setCustomConcept("");
+  };
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -69,6 +82,7 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
         entryDate: new Date(form.entryDate + ":00Z").toISOString(),
         exitDate: hasExitDate ? new Date(form.exitDate + ":00Z").toISOString() : null,
         strategy: form.strategy || null,
+        concepts: concepts.length ? concepts.join(", ") : null,
         notes: form.notes || null,
         screenshotPath,
       };
@@ -144,6 +158,44 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
                 <option key={s} value={s} />
               ))}
             </datalist>
+          </div>
+
+          <div>
+            <label className="field-label">Concepts used</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[...new Set([...ICT_CONCEPTS, ...concepts])].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleConcept(c)}
+                  aria-pressed={concepts.includes(c)}
+                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                    concepts.includes(c)
+                      ? "border-accent/60 bg-accent/15 text-ink"
+                      : "border-edge text-muted hover:border-edge-strong hover:text-ink-2"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <div className="mt-2 flex gap-2">
+              <input
+                className="field"
+                value={customConcept}
+                onChange={(e) => setCustomConcept(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCustomConcept();
+                  }
+                }}
+                placeholder="Add your own concept…"
+              />
+              <button type="button" className="btn-ghost shrink-0" onClick={addCustomConcept} disabled={!customConcept.trim()}>
+                Add
+              </button>
+            </div>
           </div>
 
           <div>
