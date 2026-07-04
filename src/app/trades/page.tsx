@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/auth";
 import { parseFilters, filtersToWhere } from "@/lib/filters";
 import { toTradeDTO } from "@/lib/dto";
 import { FilterBar } from "@/components/FilterBar";
@@ -12,13 +14,16 @@ export default async function TradesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const userId = await requireUserId();
+  if (!userId) redirect("/login");
+
   const filters = parseFilters(await searchParams);
 
   const [trades, settings, symbolRows, strategyRows] = await Promise.all([
-    prisma.trade.findMany({ where: filtersToWhere(filters), orderBy: { entryDate: "desc" } }),
-    prisma.settings.findUnique({ where: { id: 1 } }),
-    prisma.trade.findMany({ distinct: ["symbol"], select: { symbol: true }, orderBy: { symbol: "asc" } }),
-    prisma.trade.findMany({ distinct: ["strategy"], select: { strategy: true }, where: { strategy: { not: null } } }),
+    prisma.trade.findMany({ where: { ...filtersToWhere(filters), userId }, orderBy: { entryDate: "desc" } }),
+    prisma.settings.findUnique({ where: { userId } }),
+    prisma.trade.findMany({ where: { userId }, distinct: ["symbol"], select: { symbol: true }, orderBy: { symbol: "asc" } }),
+    prisma.trade.findMany({ where: { userId, strategy: { not: null } }, distinct: ["strategy"], select: { strategy: true } }),
   ]);
 
   return (

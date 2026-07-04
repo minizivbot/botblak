@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { importTradesSchema, zodMessage } from "@/lib/validation";
+import { requireUserId } from "@/lib/auth";
 
-/** Bulk-create trades parsed from a CSV on the client. Dedupes on externalId. */
+/** Bulk-create trades parsed from a CSV on the client. Dedupes on externalId per user. */
 export async function POST(req: NextRequest) {
   try {
+    const userId = await requireUserId();
+    if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
 
@@ -17,7 +21,7 @@ export async function POST(req: NextRequest) {
     const externalIds = trades.map((t) => t.externalId).filter((x): x is string => Boolean(x));
     const existing = externalIds.length
       ? await prisma.trade.findMany({
-          where: { externalId: { in: externalIds } },
+          where: { userId, externalId: { in: externalIds } },
           select: { externalId: true },
         })
       : [];
@@ -31,7 +35,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
       if (t.externalId) seen.add(t.externalId);
-      await prisma.trade.create({ data: { ...t, source } });
+      await prisma.trade.create({ data: { ...t, source, userId } });
       imported++;
     }
 

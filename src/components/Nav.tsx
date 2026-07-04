@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const icons: Record<string, React.ReactNode> = {
@@ -60,7 +60,16 @@ function Logo() {
 
 export function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  async function signOut() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    router.push("/login");
+    router.refresh();
+  }
+
+  if (pathname === "/login" || pathname === "/register") return null;
 
   const items = links.map((l) => {
     const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
@@ -102,7 +111,12 @@ export function Nav() {
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-edge bg-surface/60 p-4 backdrop-blur md:flex">
         <Link href="/" className="mb-8 px-2 pt-1"><Logo /></Link>
         <nav className="space-y-1">{items}</nav>
-        <p className="mt-auto px-3 text-xs text-muted">Local SQLite · private by default</p>
+        <div className="mt-auto space-y-2 px-3">
+          <button onClick={signOut} className="text-xs text-muted transition-colors hover:text-ink-2">
+            Sign out
+          </button>
+          <p className="text-xs text-muted">Private by default</p>
+        </div>
       </aside>
     </>
   );

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseFilters, filtersToWhere } from "@/lib/filters";
 import { tradePnl } from "@/lib/pnl";
+import { requireUserId } from "@/lib/auth";
 
 function csvCell(v: unknown): string {
   if (v == null) return "";
@@ -12,8 +13,11 @@ function csvCell(v: unknown): string {
 /** Download the (filtered) trade log as CSV. */
 export async function GET(req: NextRequest) {
   try {
+    const userId = await requireUserId();
+    if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
     const params = Object.fromEntries(req.nextUrl.searchParams.entries());
-    const where = filtersToWhere(parseFilters(params));
+    const where = { ...filtersToWhere(parseFilters(params)), userId };
     const trades = await prisma.trade.findMany({ where, orderBy: { entryDate: "asc" } });
 
     const header = [

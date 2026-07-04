@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/auth";
 import { toTradeDTO } from "@/lib/dto";
 import { JournalClient } from "@/components/JournalClient";
 
@@ -6,10 +8,13 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Journal" };
 
 export default async function JournalPage() {
+  const userId = await requireUserId();
+  if (!userId) redirect("/login");
+
   const [entries, trades, settings] = await Promise.all([
-    prisma.journalEntry.findMany({ orderBy: { date: "desc" } }),
-    prisma.trade.findMany({ orderBy: { entryDate: "desc" } }),
-    prisma.settings.findUnique({ where: { id: 1 } }),
+    prisma.journalEntry.findMany({ where: { userId }, orderBy: { date: "desc" } }),
+    prisma.trade.findMany({ where: { userId }, orderBy: { entryDate: "desc" } }),
+    prisma.settings.findUnique({ where: { userId } }),
   ]);
 
   return (

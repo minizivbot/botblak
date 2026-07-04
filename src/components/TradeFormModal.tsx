@@ -99,7 +99,7 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="field-label">Symbol *</label>
-              <input className="field uppercase" value={form.symbol} onChange={set("symbol")} placeholder="AAPL" required />
+              <input className="field uppercase" value={form.symbol} onChange={set("symbol")} placeholder="MES, NQ, CL…" required />
             </div>
             <div>
               <label className="field-label">Direction *</label>
@@ -119,6 +119,7 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
             <div>
               <label className="field-label">Size *</label>
               <input className="field" type="number" step="any" min="0" value={form.size} onChange={set("size")} required />
+              <p className="mt-1 text-xs text-muted">Futures: contracts × $/pt (2 MES = 10)</p>
             </div>
             <div>
               <label className="field-label">Fees</label>
@@ -136,9 +137,9 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
 
           <div>
             <label className="field-label">Strategy tag</label>
-            <input className="field" value={form.strategy} onChange={set("strategy")} placeholder="Breakout, Pullback…" list="strategy-suggestions" />
+            <input className="field" value={form.strategy} onChange={set("strategy")} placeholder="Opening Range, Breakout…" list="strategy-suggestions" />
             <datalist id="strategy-suggestions">
-              {["Breakout", "Pullback", "Mean Reversion", "Trend Follow", "News"].map((s) => (
+              {["Opening Range", "Breakout", "Pullback", "Mean Reversion", "Trend Follow", "News"].map((s) => (
                 <option key={s} value={s} />
               ))}
             </datalist>

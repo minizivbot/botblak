@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tradeSchema, zodMessage } from "@/lib/validation";
+import { requireUserId } from "@/lib/auth";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, ctx: Ctx) {
+  const userId = await requireUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
   const { id } = await ctx.params;
-  const trade = await prisma.trade.findUnique({ where: { id } });
+  const trade = await prisma.trade.findFirst({ where: { id, userId } });
   if (!trade) return NextResponse.json({ error: "Trade not found" }, { status: 404 });
   return NextResponse.json({ trade });
 }
 
 export async function PUT(req: NextRequest, ctx: Ctx) {
   try {
+    const userId = await requireUserId();
+    if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
     const { id } = await ctx.params;
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -21,7 +28,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     if (!parsed.success) {
       return NextResponse.json({ error: zodMessage(parsed.error) }, { status: 400 });
     }
-    const existing = await prisma.trade.findUnique({ where: { id } });
+    const existing = await prisma.trade.findFirst({ where: { id, userId } });
     if (!existing) return NextResponse.json({ error: "Trade not found" }, { status: 404 });
 
     const trade = await prisma.trade.update({ where: { id }, data: parsed.data });
@@ -34,8 +41,11 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
   try {
+    const userId = await requireUserId();
+    if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
     const { id } = await ctx.params;
-    const existing = await prisma.trade.findUnique({ where: { id } });
+    const existing = await prisma.trade.findFirst({ where: { id, userId } });
     if (!existing) return NextResponse.json({ error: "Trade not found" }, { status: 404 });
 
     await prisma.trade.delete({ where: { id } });
