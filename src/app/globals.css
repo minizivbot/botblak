@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* Dark-only design tokens (validated against surface #1a1a19) */
+@theme {
+  --color-page: #0d0d0d;
+  --color-surface: #1a1a19;
+  --color-raised: #242423;
+  --color-ink: #ffffff;
+  --color-ink-2: #c3c2b7;
+  --color-muted: #898781;
+  --color-grid: #2c2c2a;
+  --color-edge: rgba(255, 255, 255, 0.1);
+  --color-accent: #3987e5;
+  --color-accent-deep: #1c5cab;
+  --color-profit: #0ca30c;
+  --color-profit-mark: #199e70;
+  --color-loss: #e66767;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Form controls */
+.field {
+  @apply w-full rounded-lg border border-edge bg-raised px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none;
+}
+.field-label {
+  @apply mb-1 block text-xs font-medium text-ink-2;
+}
+.btn-primary,
+.btn-ghost,
+.btn-danger {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+.btn-primary {
+  @apply bg-accent text-white hover:bg-accent-deep;
+}
+.btn-ghost {
+  @apply border border-edge bg-transparent text-ink-2 hover:bg-raised hover:text-ink;
+}
+.btn-danger {
+  @apply border border-loss/40 bg-transparent text-loss hover:bg-loss/10;
+}
+.card {
+  @apply rounded-xl border border-edge bg-surface p-4 sm:p-5;
+}

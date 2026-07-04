@@ -1,0 +1,37 @@
+{
+  "name": "trading-journal",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "setup": "prisma generate && prisma db push && prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.11.0",
+    "next": "^15.3.4",
+    "papaparse": "^5.5.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "recharts": "^3.0.2",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^22.15.34",
+    "@types/papaparse": "^5.3.16",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "prisma": "^6.11.0",
+    "tailwindcss": "^4.1.11",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

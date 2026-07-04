@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Trade {
+  id             String    @id @default(cuid())
+  symbol         String
+  direction      String // "LONG" | "SHORT"
+  entryPrice     Float
+  exitPrice      Float?
+  size           Float
+  fees           Float     @default(0)
+  entryDate      DateTime
+  exitDate       DateTime?
+  strategy       String?
+  notes          String?
+  screenshotPath String?
+  source         String    @default("manual") // "manual" | "csv" | "alpaca"
+  externalId     String?   @unique // broker-side id, used to dedupe on sync/import
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([symbol])
+  @@index([entryDate])
+  @@index([strategy])
+}
+
+model JournalEntry {
+  id         String   @id @default(cuid())
+  date       String   @unique // "YYYY-MM-DD"
+  mood       Int // 1..5
+  discipline Int // 1..5
+  notes      String?
+  lessons    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Settings {
+  id              Int    @id @default(1)
+  startingBalance Float  @default(10000)
+  currency        String @default("USD")
+}
