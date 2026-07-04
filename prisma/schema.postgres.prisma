@@ -1,9 +1,13 @@
+// Production schema for hosted Postgres (Neon via Vercel).
+// Keep the models identical to prisma/schema.prisma (SQLite, local dev) —
+// only the datasource provider differs. Used by the "vercel-build" script.
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

@@ -1,63 +1,87 @@
 import { PrismaClient } from "@prisma/client";
+import { randomBytes, scryptSync } from "crypto";
 
 const prisma = new PrismaClient();
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
+}
 
 type SeedTrade = {
   symbol: string;
   direction: "LONG" | "SHORT";
   entryPrice: number;
   exitPrice: number;
-  size: number;
+  size: number; // contracts x $/point
   fees: number;
-  entryDate: string; // ISO
-  exitDate: string; // ISO
+  entryDate: string;
+  exitDate: string;
   strategy: string;
   notes: string;
 };
 
-// 30 realistic trades spread over the ~10 weeks before the seed date.
+// 30 realistic ICT-style futures trades (MES/ES $5|$50 per pt, MNQ/NQ $2|$20
+// per pt, MGC $10 per pt, CL $1,000 per $1). Entry times sit inside ICT
+// killzones (ET): London 02:00-05:00, NY AM 07:00-10:00, London Close
+// (AM Silver Bullet) 10:00-11:00, NY PM 13:30-16:00. Times below are UTC (EDT+4).
 const trades: SeedTrade[] = [
-  { symbol: "AAPL", direction: "LONG", entryPrice: 196.4, exitPrice: 199.85, size: 50, fees: 1.0, entryDate: "2026-04-27T13:35:00Z", exitDate: "2026-04-27T15:10:00Z", strategy: "Breakout", notes: "Broke above pre-market high on volume. Took profit at prior resistance." },
-  { symbol: "TSLA", direction: "SHORT", entryPrice: 292.1, exitPrice: 297.4, size: 20, fees: 1.2, entryDate: "2026-04-28T14:05:00Z", exitDate: "2026-04-28T14:40:00Z", strategy: "Mean Reversion", notes: "Faded the gap up too early, stopped out above VWAP." },
-  { symbol: "NVDA", direction: "LONG", entryPrice: 152.3, exitPrice: 158.9, size: 60, fees: 1.5, entryDate: "2026-04-29T13:45:00Z", exitDate: "2026-04-30T18:30:00Z", strategy: "Trend Follow", notes: "Held overnight into earnings drift. Trailed stop under 20 EMA." },
-  { symbol: "SPY", direction: "LONG", entryPrice: 592.5, exitPrice: 590.1, size: 30, fees: 0.9, entryDate: "2026-05-01T15:20:00Z", exitDate: "2026-05-01T17:05:00Z", strategy: "Pullback", notes: "Bought the dip at the 50 SMA but breadth was weak. Cut it." },
-  { symbol: "AMD", direction: "LONG", entryPrice: 118.7, exitPrice: 123.35, size: 80, fees: 1.4, entryDate: "2026-05-04T13:40:00Z", exitDate: "2026-05-04T19:45:00Z", strategy: "Breakout", notes: "Cup-and-handle break on the daily. Scaled out in two pieces." },
-  { symbol: "MSFT", direction: "LONG", entryPrice: 449.2, exitPrice: 452.05, size: 25, fees: 1.0, entryDate: "2026-05-05T14:15:00Z", exitDate: "2026-05-05T16:50:00Z", strategy: "Pullback", notes: "First pullback to VWAP after strong open." },
-  { symbol: "TSLA", direction: "LONG", entryPrice: 285.6, exitPrice: 281.2, size: 25, fees: 1.2, entryDate: "2026-05-06T14:00:00Z", exitDate: "2026-05-06T14:55:00Z", strategy: "Breakout", notes: "False breakout, no follow-through. Respected the stop." },
-  { symbol: "META", direction: "LONG", entryPrice: 655.4, exitPrice: 668.8, size: 15, fees: 1.1, entryDate: "2026-05-07T13:50:00Z", exitDate: "2026-05-08T19:10:00Z", strategy: "Trend Follow", notes: "Rode the post-earnings momentum for a second day." },
-  { symbol: "QQQ", direction: "SHORT", entryPrice: 512.8, exitPrice: 508.15, size: 40, fees: 1.3, entryDate: "2026-05-11T17:30:00Z", exitDate: "2026-05-11T19:55:00Z", strategy: "Mean Reversion", notes: "Extended 2.5 ATR above the mean into the close. Covered near VWAP." },
-  { symbol: "NVDA", direction: "LONG", entryPrice: 160.1, exitPrice: 159.05, size: 50, fees: 1.5, entryDate: "2026-05-12T14:10:00Z", exitDate: "2026-05-12T15:00:00Z", strategy: "Pullback", notes: "Choppy day, small loss. Should have waited for the afternoon setup." },
-  { symbol: "AAPL", direction: "SHORT", entryPrice: 204.9, exitPrice: 201.3, size: 45, fees: 1.0, entryDate: "2026-05-13T15:40:00Z", exitDate: "2026-05-13T19:30:00Z", strategy: "Mean Reversion", notes: "Rejected at weekly resistance twice. Clean fade." },
-  { symbol: "COIN", direction: "LONG", entryPrice: 242.5, exitPrice: 259.7, size: 30, fees: 1.6, entryDate: "2026-05-14T13:35:00Z", exitDate: "2026-05-15T18:20:00Z", strategy: "News", notes: "Bought the regulatory news pop, added on the first pullback." },
-  { symbol: "SPY", direction: "LONG", entryPrice: 596.2, exitPrice: 598.9, size: 35, fees: 0.9, entryDate: "2026-05-18T14:25:00Z", exitDate: "2026-05-18T19:50:00Z", strategy: "Trend Follow", notes: "Slow grind day, held to the close." },
-  { symbol: "AMZN", direction: "LONG", entryPrice: 212.4, exitPrice: 209.85, size: 50, fees: 1.2, entryDate: "2026-05-19T14:00:00Z", exitDate: "2026-05-19T16:10:00Z", strategy: "Breakout", notes: "Breakout failed when the market rolled over. -1R." },
-  { symbol: "TSLA", direction: "SHORT", entryPrice: 301.8, exitPrice: 289.95, size: 22, fees: 1.2, entryDate: "2026-05-20T14:35:00Z", exitDate: "2026-05-21T17:45:00Z", strategy: "Trend Follow", notes: "Lower-high on the daily after the downgrade. Best trade of the month." },
-  { symbol: "GOOGL", direction: "LONG", entryPrice: 178.9, exitPrice: 181.55, size: 55, fees: 1.1, entryDate: "2026-05-22T13:55:00Z", exitDate: "2026-05-22T19:40:00Z", strategy: "Pullback", notes: "Bounce off the rising 21 EMA." },
-  { symbol: "NVDA", direction: "SHORT", entryPrice: 166.8, exitPrice: 169.6, size: 40, fees: 1.5, entryDate: "2026-05-26T15:15:00Z", exitDate: "2026-05-26T16:00:00Z", strategy: "Mean Reversion", notes: "Tried to fade strength on a strong day. Bad idea, cut fast." },
-  { symbol: "MSFT", direction: "LONG", entryPrice: 458.6, exitPrice: 465.2, size: 30, fees: 1.0, entryDate: "2026-05-27T13:45:00Z", exitDate: "2026-05-28T18:35:00Z", strategy: "Breakout", notes: "All-time-high breakout, held a partial overnight." },
-  { symbol: "QQQ", direction: "LONG", entryPrice: 518.4, exitPrice: 521.05, size: 45, fees: 1.3, entryDate: "2026-05-29T14:20:00Z", exitDate: "2026-05-29T19:55:00Z", strategy: "Trend Follow", notes: "Month-end markup, rode the afternoon trend." },
-  { symbol: "AMD", direction: "SHORT", entryPrice: 127.9, exitPrice: 125.1, size: 70, fees: 1.4, entryDate: "2026-06-02T15:00:00Z", exitDate: "2026-06-02T18:25:00Z", strategy: "Mean Reversion", notes: "Faded the open drive after three green days." },
-  { symbol: "AAPL", direction: "LONG", entryPrice: 207.3, exitPrice: 213.4, size: 55, fees: 1.0, entryDate: "2026-06-03T13:40:00Z", exitDate: "2026-06-04T19:15:00Z", strategy: "Trend Follow", notes: "WWDC anticipation swing. Exited into the event pop." },
-  { symbol: "COIN", direction: "SHORT", entryPrice: 268.4, exitPrice: 274.9, size: 25, fees: 1.6, entryDate: "2026-06-05T14:10:00Z", exitDate: "2026-06-05T15:05:00Z", strategy: "News", notes: "Shorted the pop, got squeezed. Sized too big for the volatility." },
-  { symbol: "SPY", direction: "SHORT", entryPrice: 601.7, exitPrice: 598.35, size: 40, fees: 0.9, entryDate: "2026-06-08T16:45:00Z", exitDate: "2026-06-08T19:50:00Z", strategy: "Mean Reversion", notes: "CPI-eve drift lower, covered before the close." },
-  { symbol: "META", direction: "LONG", entryPrice: 672.1, exitPrice: 684.55, size: 18, fees: 1.1, entryDate: "2026-06-09T13:50:00Z", exitDate: "2026-06-10T18:40:00Z", strategy: "Breakout", notes: "Flag break above 670. Textbook follow-through day two." },
-  { symbol: "TSLA", direction: "LONG", entryPrice: 295.2, exitPrice: 293.75, size: 25, fees: 1.2, entryDate: "2026-06-11T14:05:00Z", exitDate: "2026-06-11T15:20:00Z", strategy: "Pullback", notes: "Support held but momentum died. Scratched it." },
-  { symbol: "NVDA", direction: "LONG", entryPrice: 171.5, exitPrice: 178.2, size: 65, fees: 1.5, entryDate: "2026-06-15T13:35:00Z", exitDate: "2026-06-17T19:45:00Z", strategy: "Trend Follow", notes: "Three-day swing into the conference keynote." },
-  { symbol: "GOOGL", direction: "SHORT", entryPrice: 184.6, exitPrice: 186.85, size: 45, fees: 1.1, entryDate: "2026-06-18T14:30:00Z", exitDate: "2026-06-18T16:15:00Z", strategy: "Mean Reversion", notes: "Fade failed on antitrust headline. News > technicals." },
-  { symbol: "AMZN", direction: "LONG", entryPrice: 218.9, exitPrice: 224.3, size: 50, fees: 1.2, entryDate: "2026-06-22T13:45:00Z", exitDate: "2026-06-23T18:55:00Z", strategy: "Breakout", notes: "Range break after two weeks of consolidation." },
-  { symbol: "QQQ", direction: "LONG", entryPrice: 527.8, exitPrice: 531.15, size: 40, fees: 1.3, entryDate: "2026-06-25T14:15:00Z", exitDate: "2026-06-25T19:50:00Z", strategy: "Pullback", notes: "Morning dip bought at yesterday's high — support/resistance flip." },
-  { symbol: "AAPL", direction: "LONG", entryPrice: 215.8, exitPrice: 214.2, size: 40, fees: 1.0, entryDate: "2026-06-29T14:00:00Z", exitDate: "2026-06-29T17:35:00Z", strategy: "Breakout", notes: "Quarter-end chop, breakout never followed through." },
+  { symbol: "MES", direction: "LONG", entryPrice: 6902.25, exitPrice: 6918.5, size: 10, fees: 5.0, entryDate: "2026-04-27T14:03:00Z", exitDate: "2026-04-27T15:40:00Z", strategy: "Silver Bullet", notes: "2 MES ($5/pt). 10:03 AM SB — 5m FVG after the run on Asia highs, targeted the PM session liquidity." },
+  { symbol: "MNQ", direction: "SHORT", entryPrice: 25180, exitPrice: 25212, size: 6, fees: 7.5, entryDate: "2026-04-28T11:35:00Z", exitDate: "2026-04-28T12:10:00Z", strategy: "Judas Swing", notes: "3 MNQ ($2/pt). Read the NY open push as the Judas leg — it was real expansion. Stopped above the open." },
+  { symbol: "ES", direction: "LONG", entryPrice: 6895, exitPrice: 6907.75, size: 50, fees: 9.0, entryDate: "2026-04-29T13:15:00Z", exitDate: "2026-04-30T18:30:00Z", strategy: "Order Block", notes: "1 ES ($50/pt). Daily bullish OB held on the retest, swing into next day's buy-side draw." },
+  { symbol: "MGC", direction: "LONG", entryPrice: 4212.4, exitPrice: 4198.7, size: 20, fees: 5.0, entryDate: "2026-04-30T07:20:00Z", exitDate: "2026-04-30T08:45:00Z", strategy: "FVG", notes: "2 MGC ($10/pt). London 15m FVG fill kept going through it — no displacement behind the gap." },
+  { symbol: "CL", direction: "SHORT", entryPrice: 68.42, exitPrice: 67.55, size: 1000, fees: 5.0, entryDate: "2026-05-01T14:40:00Z", exitDate: "2026-05-01T19:20:00Z", strategy: "Liquidity Sweep", notes: "1 CL ($1,000/$1). Inventory pop swept Tuesday's high into a bearish breaker — rode it to the sell-side pool." },
+  { symbol: "MES", direction: "SHORT", entryPrice: 7010.5, exitPrice: 6994.25, size: 15, fees: 7.5, entryDate: "2026-05-04T13:45:00Z", exitDate: "2026-05-04T15:30:00Z", strategy: "Power of 3", notes: "3 MES. Accumulation under the open, manipulation above PDH, distribution lower — textbook AMD." },
+  { symbol: "MNQ", direction: "LONG", entryPrice: 25310, exitPrice: 25398, size: 8, fees: 10.0, entryDate: "2026-05-05T11:50:00Z", exitDate: "2026-05-05T19:40:00Z", strategy: "SMT Divergence", notes: "4 MNQ. ES made a lower low into 8:00, NQ held — SMT at the sell-side sweep. Held through lunch to PM highs." },
+  { symbol: "MES", direction: "LONG", entryPrice: 7025, exitPrice: 7016.75, size: 10, fees: 5.0, entryDate: "2026-05-06T12:00:00Z", exitDate: "2026-05-06T12:50:00Z", strategy: "OTE", notes: "2 MES. 62% retrace entry but the swing had already filled its draw. Scratched at the stop." },
+  { symbol: "MGC", direction: "LONG", entryPrice: 4241.2, exitPrice: 4259.6, size: 30, fees: 7.5, entryDate: "2026-05-07T06:40:00Z", exitDate: "2026-05-07T09:15:00Z", strategy: "Judas Swing", notes: "3 MGC. London Judas below Asia low, MSS on 5m, long into the London session expansion." },
+  { symbol: "MES", direction: "SHORT", entryPrice: 7042, exitPrice: 7051.5, size: 10, fees: 5.0, entryDate: "2026-05-08T15:10:00Z", exitDate: "2026-05-08T15:50:00Z", strategy: "FVG", notes: "2 MES. Shorted into a 5m FVG on a one-sided trend day. Fighting the daily bias again." },
+  { symbol: "MNQ", direction: "SHORT", entryPrice: 25490, exitPrice: 25402, size: 4, fees: 5.0, entryDate: "2026-05-11T17:35:00Z", exitDate: "2026-05-11T19:55:00Z", strategy: "Silver Bullet", notes: "2 MNQ. PM SB (2-3pm): sweep of the lunch high into a bearish FVG, target the AM session low." },
+  { symbol: "ES", direction: "LONG", entryPrice: 7038, exitPrice: 7049.25, size: 50, fees: 9.0, entryDate: "2026-05-12T13:35:00Z", exitDate: "2026-05-12T15:20:00Z", strategy: "Liquidity Sweep", notes: "1 ES. 9:35 sweep of the overnight low, displacement up, entered the first discount array." },
+  { symbol: "MES", direction: "LONG", entryPrice: 7055, exitPrice: 7048.5, size: 20, fees: 10.0, entryDate: "2026-05-13T14:20:00Z", exitDate: "2026-05-13T14:55:00Z", strategy: "Silver Bullet", notes: "4 MES. SB window FVG never got the displacement leg — the gap was inversion. -6.5 pts." },
+  { symbol: "CL", direction: "LONG", entryPrice: 66.8, exitPrice: 66.35, size: 1000, fees: 5.0, entryDate: "2026-05-14T14:25:00Z", exitDate: "2026-05-14T17:50:00Z", strategy: "Order Block", notes: "1 CL. H1 OB failed on the OPEC headline — news ran the stops through the array." },
+  { symbol: "MNQ", direction: "LONG", entryPrice: 25520, exitPrice: 25601, size: 6, fees: 7.5, entryDate: "2026-05-15T11:45:00Z", exitDate: "2026-05-15T19:50:00Z", strategy: "OTE", notes: "3 MNQ. OTE off the 8:30 data spike low, 62-79% zone with a 15m FVG confluence. Runner to the close." },
+  { symbol: "MES", direction: "LONG", entryPrice: 7068.25, exitPrice: 7082, size: 15, fees: 7.5, entryDate: "2026-05-18T13:40:00Z", exitDate: "2026-05-18T16:30:00Z", strategy: "Breaker", notes: "3 MES. Bullish breaker from Friday's high, entered the retest at 9:40." },
+  { symbol: "MGC", direction: "SHORT", entryPrice: 4290, exitPrice: 4302.3, size: 20, fees: 5.0, entryDate: "2026-05-19T18:15:00Z", exitDate: "2026-05-19T19:05:00Z", strategy: "Liquidity Sweep", notes: "2 MGC. Faded the Fed-minutes spike calling it a sweep — it was a genuine repricing. News > arrays." },
+  { symbol: "MES", direction: "SHORT", entryPrice: 7095, exitPrice: 7079.75, size: 25, fees: 12.5, entryDate: "2026-05-20T14:05:00Z", exitDate: "2026-05-20T19:45:00Z", strategy: "Silver Bullet", notes: "5 MES. Best trade of the month: 10:05 sweep of PDH, MSS, bearish FVG entry, scaled thirds to the sell-side pool." },
+  { symbol: "MNQ", direction: "LONG", entryPrice: 25630, exitPrice: 25668, size: 4, fees: 5.0, entryDate: "2026-05-21T17:45:00Z", exitDate: "2026-05-21T19:35:00Z", strategy: "FVG", notes: "2 MNQ. PM 5m FVG with the trend, small size after yesterday's big day, banked +38 pts." },
+  { symbol: "ES", direction: "SHORT", entryPrice: 7102, exitPrice: 7089.5, size: 50, fees: 9.0, entryDate: "2026-05-22T17:45:00Z", exitDate: "2026-05-22T19:50:00Z", strategy: "Power of 3", notes: "1 ES. Friday PM distribution after the week's high got swept — sold the redelivery into the close." },
+  { symbol: "MES", direction: "LONG", entryPrice: 7110, exitPrice: 7104.75, size: 10, fees: 5.0, entryDate: "2026-05-26T13:35:00Z", exitDate: "2026-05-26T14:10:00Z", strategy: "Judas Swing", notes: "2 MES. Holiday-week open, no real manipulation leg to read. Scratched fast." },
+  { symbol: "CL", direction: "SHORT", entryPrice: 71.15, exitPrice: 70.42, size: 1000, fees: 5.0, entryDate: "2026-05-27T14:35:00Z", exitDate: "2026-05-27T18:20:00Z", strategy: "Order Block", notes: "1 CL. Bearish H1 OB above the inventory number, rode the flush to the discount array." },
+  { symbol: "MNQ", direction: "SHORT", entryPrice: 25780, exitPrice: 25842, size: 6, fees: 7.5, entryDate: "2026-05-28T15:20:00Z", exitDate: "2026-05-28T16:05:00Z", strategy: "SMT Divergence", notes: "3 MNQ. Called SMT against ES on an AI-headline day — correlation breaks on news. Cut fast." },
+  { symbol: "MES", direction: "LONG", entryPrice: 7118.5, exitPrice: 7136.25, size: 15, fees: 7.5, entryDate: "2026-05-29T11:55:00Z", exitDate: "2026-05-29T19:55:00Z", strategy: "OTE", notes: "3 MES. Month-end markup: OTE off the 8am low, held the runner into the 3:50 MOC." },
+  { symbol: "MGC", direction: "LONG", entryPrice: 4318.6, exitPrice: 4337.2, size: 20, fees: 5.0, entryDate: "2026-06-01T06:45:00Z", exitDate: "2026-06-01T13:40:00Z", strategy: "Breaker", notes: "2 MGC. London breaker above the ATH consolidation, held through the NY continuation." },
+  { symbol: "MES", direction: "SHORT", entryPrice: 7150, exitPrice: 7159.25, size: 10, fees: 5.0, entryDate: "2026-06-02T14:20:00Z", exitDate: "2026-06-02T15:00:00Z", strategy: "FVG", notes: "2 MES. Counter-trend short at a premium FVG in a strong bull leg. Respected the stop." },
+  { symbol: "MNQ", direction: "LONG", entryPrice: 25890, exitPrice: 25972, size: 8, fees: 10.0, entryDate: "2026-06-03T13:35:00Z", exitDate: "2026-06-03T17:25:00Z", strategy: "Liquidity Sweep", notes: "4 MNQ. 9:35 turtle soup under the Asia low, MSS, long to the buy-side pool at the PDH." },
+  { symbol: "ES", direction: "LONG", entryPrice: 7141, exitPrice: 7127.75, size: 50, fees: 9.0, entryDate: "2026-06-05T12:25:00Z", exitDate: "2026-06-05T13:30:00Z", strategy: "OTE", notes: "1 ES. Full size into NFP at an OTE level — the number ran both sides. Should have been flat." },
+  { symbol: "MES", direction: "LONG", entryPrice: 7133, exitPrice: 7151.5, size: 20, fees: 10.0, entryDate: "2026-06-16T14:10:00Z", exitDate: "2026-06-16T19:35:00Z", strategy: "Silver Bullet", notes: "4 MES. Two inside days, SB sweep of both, displacement north — let the runner work to the PM." },
+  { symbol: "CL", direction: "LONG", entryPrice: 69.2, exitPrice: 70.05, size: 1000, fees: 5.0, entryDate: "2026-06-23T14:10:00Z", exitDate: "2026-06-24T17:45:00Z", strategy: "Order Block", notes: "1 CL. Daily bullish OB at the discount of the new range, two-day hold to the measured draw." },
 ];
 
 const journalEntries = [
-  { date: "2026-05-20", mood: 4, discipline: 5, notes: "Patient all morning, waited for the TSLA lower-high to confirm before shorting.", lessons: "The best trades come from waiting for the setup to come to me, not chasing." },
-  { date: "2026-05-26", mood: 2, discipline: 2, notes: "Faded NVDA strength out of boredom. Knew it was a bad idea when I clicked.", lessons: "No counter-trend trades on trend days. Write the plan before the open and stick to it." },
-  { date: "2026-06-05", mood: 2, discipline: 3, notes: "COIN short was double my normal size because I felt confident. Got squeezed immediately.", lessons: "Confidence is not a position-sizing signal. Volatile names get half size, not double." },
-  { date: "2026-06-15", mood: 5, discipline: 5, notes: "Followed the swing plan on NVDA exactly: starter, add on confirmation, trail the stop.", lessons: "Scaling in on confirmation keeps the risk small when I'm wrong and the size big when I'm right." },
+  { date: "2026-05-20", mood: 4, discipline: 5, notes: "Waited for the 10am Silver Bullet window instead of forcing the open. Sweep of PDH, clean MSS, FVG entry — scaled thirds exactly like the plan.", lessons: "The setup comes to the killzone. I don't have to trade the 9:30 candle to catch the move." },
+  { date: "2026-05-26", mood: 2, discipline: 3, notes: "Holiday-week open with no clear manipulation leg. Took the Judas read anyway and scratched fast — at least the loss was small.", lessons: "No draw on liquidity, no trade. Half size on low-volume weeks." },
+  { date: "2026-06-05", mood: 2, discipline: 2, notes: "Held a full ES into NFP at an OTE level like it was a normal morning. The number ran both sides of the book and took my stop in minutes.", lessons: "Flat into tier-1 news, no exceptions. The cleanest array means nothing when the algorithm is repricing." },
+  { date: "2026-06-16", mood: 5, discipline: 5, notes: "Two inside days marked out the night before. SB window swept both sides, displacement north, entered the FVG and let the runner work.", lessons: "Marking the liquidity the night before removes every ounce of hesitation at the trigger." },
 ];
 
 async function main() {
-  await prisma.trade.deleteMany({ where: { source: "seed" } });
+  // On a database that already has real (non-seed) trades, do nothing —
+  // this keeps production deploys from touching user data.
+  const realTrades = await prisma.trade.count({ where: { source: { not: "seed" } } });
+  if (realTrades > 0) {
+    console.log(`Found ${realTrades} user trades — skipping sample-data seed.`);
+    return;
+  }
+
+  // Demo account that owns the sample data. Sign in with demo / demo1234.
+  const demo = await prisma.user.upsert({
+    where: { username: "demo" },
+    update: {},
+    create: { username: "demo", passwordHash: hashPassword("demo1234") },
+  });
+
+  await prisma.trade.deleteMany({ where: { userId: demo.id, source: "seed" } });
 
   for (const t of trades) {
     await prisma.trade.create({
@@ -66,25 +90,28 @@ async function main() {
         entryDate: new Date(t.entryDate),
         exitDate: new Date(t.exitDate),
         source: "seed",
+        userId: demo.id,
       },
     });
   }
 
   for (const j of journalEntries) {
     await prisma.journalEntry.upsert({
-      where: { date: j.date },
+      where: { userId_date: { userId: demo.id, date: j.date } },
       update: j,
-      create: j,
+      create: { ...j, userId: demo.id },
     });
   }
 
   await prisma.settings.upsert({
-    where: { id: 1 },
+    where: { userId: demo.id },
     update: {},
-    create: { id: 1, startingBalance: 25000, currency: "USD" },
+    create: { userId: demo.id, startingBalance: 25000, currency: "USD" },
   });
 
-  console.log(`Seeded ${trades.length} trades, ${journalEntries.length} journal entries, and default settings.`);
+  console.log(
+    `Seeded demo account (demo / demo1234) with ${trades.length} futures trades and ${journalEntries.length} journal entries.`,
+  );
 }
 
 main()

@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+import { KILLZONES } from "@/lib/killzones";
 
 type Props = {
   symbols: string[];
@@ -44,7 +45,7 @@ export function FilterBar({ symbols, strategies }: Props) {
     [params, pathname, router],
   );
 
-  const hasFilters = ["from", "to", "symbol", "strategy", "direction"].some((k) => params.get(k));
+  const hasFilters = ["from", "to", "symbol", "strategy", "direction", "killzone"].some((k) => params.get(k));
   const presets: { label: string; value: number | "ytd" | "all" }[] = [
     { label: "7D", value: 7 },
     { label: "30D", value: 30 },
@@ -135,6 +136,20 @@ export function FilterBar({ symbols, strategies }: Props) {
           <option value="">All</option>
           <option value="LONG">Long</option>
           <option value="SHORT">Short</option>
+        </select>
+      </div>
+      <div>
+        <label className="field-label" htmlFor="f-killzone">Killzone</label>
+        <select
+          id="f-killzone"
+          className="field w-auto"
+          value={params.get("killzone") ?? ""}
+          onChange={(e) => setParam("killzone", e.target.value)}
+        >
+          <option value="">All</option>
+          {KILLZONES.map((k) => (
+            <option key={k} value={k}>{k}</option>
+          ))}
         </select>
       </div>
       {hasFilters && (

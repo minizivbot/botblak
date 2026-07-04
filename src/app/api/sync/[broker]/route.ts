@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getBroker, BrokerError, brokers } from "@/lib/brokers";
+import { requireUserId } from "@/lib/auth";
 
 /** GET: list available brokers and whether their keys are configured. */
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ broker: string }> }) {
@@ -21,6 +22,9 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ broker: st
 
 /** POST: sync trades from the broker's API into the journal. */
 export async function POST(_req: NextRequest, ctx: { params: Promise<{ broker: string }> }) {
+  const userId = await requireUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
   const { broker } = await ctx.params;
   const adapter = getBroker(broker);
   if (!adapter) {
@@ -33,13 +37,17 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ broker: s
     let imported = 0;
     let skipped = 0;
     for (const t of trades) {
-      const exists = await prisma.trade.findUnique({ where: { externalId: t.externalId } });
+      const exists = await prisma.trade.findFirst({
+        where: { userId, externalId: t.externalId },
+        select: { id: true },
+      });
       if (exists) {
         skipped++;
         continue;
       }
       await prisma.trade.create({
         data: {
+          userId,
           symbol: t.symbol,
           direction: t.direction,
           entryPrice: t.entryPrice,

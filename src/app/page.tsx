@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { parseFilters, filtersToWhere } from "@/lib/filters";
+import { requireUserId } from "@/lib/auth";
+import { parseFilters, filtersToWhere, applyKillzoneFilter } from "@/lib/filters";
 import {
   computeStats,
   equityCurve,
@@ -8,6 +10,7 @@ import {
   pnlByPeriod,
   pnlByGroup,
   pnlByWeekday,
+  pnlByKillzone,
   dailyPnlMap,
   closedTrades,
 } from "@/lib/stats";
@@ -22,22 +25,27 @@ import { WeekdayPnlChart } from "@/components/charts/WeekdayPnlChart";
 import { CalendarHeatmap } from "@/components/charts/CalendarHeatmap";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Dashboard — TradeZone" };
 
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const filters = parseFilters(await searchParams);
-  const where = filtersToWhere(filters);
+  const userId = await requireUserId();
+  if (!userId) redirect("/login");
 
-  const [settings, trades, symbolRows, strategyRows] = await Promise.all([
-    prisma.settings.findUnique({ where: { id: 1 } }),
+  const filters = parseFilters(await searchParams);
+  const where = { ...filtersToWhere(filters), userId };
+
+  const [settings, tradesRaw, symbolRows, strategyRows] = await Promise.all([
+    prisma.settings.findUnique({ where: { userId } }),
     prisma.trade.findMany({ where, orderBy: { entryDate: "asc" } }),
-    prisma.trade.findMany({ distinct: ["symbol"], select: { symbol: true }, orderBy: { symbol: "asc" } }),
-    prisma.trade.findMany({ distinct: ["strategy"], select: { strategy: true }, where: { strategy: { not: null } } }),
+    prisma.trade.findMany({ where: { userId }, distinct: ["symbol"], select: { symbol: true }, orderBy: { symbol: "asc" } }),
+    prisma.trade.findMany({ where: { userId, strategy: { not: null } }, distinct: ["strategy"], select: { strategy: true } }),
   ]);
 
+  const trades = applyKillzoneFilter(tradesRaw, filters);
   const currency = settings?.currency ?? "USD";
   const startingBalance = settings?.startingBalance ?? 10000;
 
@@ -52,6 +60,7 @@ export default async function DashboardPage({
   const bySymbol = pnlByGroup(trades, "symbol");
   const byStrategy = pnlByGroup(trades, "strategy");
   const byWeekday = pnlByWeekday(trades);
+  const byKillzone = pnlByKillzone(trades);
   const daily = dailyPnlMap(trades);
 
   const returnPct = startingBalance > 0 ? stats.totalPnl / startingBalance : null;
@@ -214,22 +223,30 @@ export default async function DashboardPage({
       {/* Groups */}
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card">
-          <h2 className="card-title">P&L by symbol</h2>
-          <GroupPnlChart rows={bySymbol} currency={currency} />
+          <h2 className="card-title">P&L by killzone</h2>
+          <GroupPnlChart rows={byKillzone} currency={currency} />
+          <p className="mt-2 text-xs text-muted">By entry time, New York time — ICT killzone windows.</p>
         </section>
         <section className="card">
-          <h2 className="card-title">P&L by strategy</h2>
+          <h2 className="card-title">P&L by setup</h2>
           <GroupPnlChart rows={byStrategy} currency={currency} />
         </section>
       </div>
 
-      {/* Weekday + activity */}
       <div className="grid gap-4 lg:grid-cols-2">
+        <section className="card">
+          <h2 className="card-title">P&L by symbol</h2>
+          <GroupPnlChart rows={bySymbol} currency={currency} />
+        </section>
         <section className="card">
           <h2 className="card-title">P&L by weekday</h2>
           <WeekdayPnlChart rows={byWeekday} currency={currency} />
         </section>
-        <section className="card">
+      </div>
+
+      {/* Activity */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="card lg:col-span-2">
           <h2 className="card-title">Latest activity</h2>
           {open.length > 0 && (
             <div className="mb-3 rounded-xl border border-accent/25 bg-accent/5 p-3">

@@ -1,4 +1,5 @@
 import { tradePnl } from "./pnl";
+import { KILLZONES, killzone } from "./killzones";
 
 export type StatsTrade = {
   id: string;
@@ -197,6 +198,17 @@ export function drawdownCurve(trades: StatsTrade[], startingBalance: number) {
     points.push({ date: t.closedAt.toISOString(), dd: equity - peak });
   }
   return points;
+}
+
+/** Net P&L and trade count per ICT killzone (by entry time, ET). */
+export function pnlByKillzone(trades: StatsTrade[]) {
+  const buckets = KILLZONES.map((label) => ({ label: label as string, pnl: 0, count: 0 }));
+  for (const t of closedTrades(trades)) {
+    const idx = KILLZONES.indexOf(killzone(t.entryDate));
+    buckets[idx].pnl += t.pnl;
+    buckets[idx].count += 1;
+  }
+  return buckets.filter((b) => b.count > 0);
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];

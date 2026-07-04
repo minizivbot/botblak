@@ -1,12 +1,18 @@
-# Trading Journal
+# TradeZone — ICT Futures Trading Journal
 
 A full-stack trading journal built with **Next.js (App Router) + TypeScript + Tailwind CSS**,
-**SQLite + Prisma**, and **Recharts**. Dark-mode UI, mobile responsive, runs entirely on your machine.
+**SQLite + Prisma** (Postgres in production), and **Recharts**. Dark-mode UI, mobile responsive,
+futures-first (works for stocks too).
 
 ## Features
 
+- **Accounts** — create an account with a username and password and sign in; every user has
+  their own private trades, journal, and settings. Passwords are stored as scrypt hashes and
+  sessions are HMAC-signed HTTP-only cookies.
 - **Trade log** — add / edit / delete trades (symbol, long/short, entry/exit price, size, fees,
-  entry/exit date-time, strategy tag, notes, screenshot upload). Open trades (no exit yet) are supported.
+  entry/exit date-time, strategy tag, notes, screenshot upload). Open trades (no exit yet) are
+  supported. For futures, size = contracts × dollars per point (e.g. 2 MES = 2 × $5 = 10), so
+  P&L is always in real dollars.
 - **Broker sync**
   - **CSV import** with presets for **MetaTrader 4**, **MetaTrader 5**, and a **generic CSV** with
     manual column mapping and a preview before importing. Duplicate rows (same ticket id) are skipped.
@@ -34,14 +40,16 @@ npm install
 # 2. Create your env file
 cp .env.example .env
 
-# 3. Create the SQLite database and seed 30 sample trades
+# 3. Create the SQLite database and seed 30 sample futures trades
 npm run setup        # = prisma generate + prisma db push + prisma db seed
 
 # 4. Run it
 npm run dev
 ```
 
-Open <http://localhost:3000> — the dashboard is already populated with the seeded sample data.
+Open <http://localhost:3000> and sign in with the demo account — **demo / demo1234** — to see
+the dashboard populated with 30 sample futures trades (MES, MNQ, ES, NQ, MGC, CL), or create
+your own account and start clean.
 
 To wipe and re-seed at any time: delete `prisma/dev.db` and run `npm run setup` again
 (re-running `npm run db:seed` alone also refreshes the sample trades).
@@ -82,6 +90,34 @@ application with Tradovate you can additionally set `TRADOVATE_CID` and `TRADOVA
 > **TradingView note:** TradingView has no public API for pulling your trade history, so
 > it can't be synced with a username/password. Export your paper-trading history to CSV
 > from TradingView and import it with the **Generic CSV** preset instead.
+
+## Deploying to the internet (free, Vercel + Neon)
+
+The app deploys to Vercel's free plan with a free Neon Postgres database.
+It ships with single-password protection so your journal stays private.
+
+1. **Sign up** at [vercel.com](https://vercel.com) with your GitHub account (free "Hobby" plan).
+2. **Import the repo**: Add New → Project → pick `botblak` → Deploy.
+   (The first deploy will fail — that's expected, the database isn't connected yet.)
+3. **Add a database**: in the project, open **Storage → Create Database → Neon (Postgres)**
+   → Create & Connect. This automatically adds `DATABASE_URL` to the project.
+4. **Set the session secret**: **Settings → Environment Variables** → add
+   `AUTH_SECRET` = any long random string (e.g. from `openssl rand -hex 32`).
+   (Optionally also add your `ALPACA_*` / `TRADOVATE_*` keys here for broker sync.)
+5. **Redeploy**: Deployments → ⋯ on the latest → Redeploy.
+
+Open `https://<your-project>.vercel.app` on any device, tap **Create one** on the sign-in
+screen, and register your account. The build uses `prisma/schema.postgres.prisma` (see
+`vercel-build` in package.json), creates the tables, and seeds the demo account's sample
+trades only when the database has no real data.
+
+Notes:
+- Locally the app stays on SQLite — nothing changes for `npm run dev`.
+- Anyone who finds your URL can register an account, but each account only ever sees its
+  own data. Broker `.env` keys are shared server-side — keep the URL to yourself if you
+  configure broker sync.
+- Screenshot uploads don't persist on Vercel's serverless filesystem; store screenshots
+  locally or add blob storage later.
 
 ## Adding another broker
 

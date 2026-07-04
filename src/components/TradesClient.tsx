@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { TradeDTO } from "@/lib/dto";
 import { tradePnl } from "@/lib/pnl";
+import { killzone } from "@/lib/killzones";
 import { fmtMoney, fmtSignedMoney, fmtDateTime, fmtNum } from "@/lib/format";
 import { TradeFormModal } from "./TradeFormModal";
 
@@ -92,7 +93,9 @@ export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currenc
                   </td>
                   <td className="px-2 py-2.5 whitespace-nowrap text-ink-2">
                     {fmtNum(t.entryPrice, 4)}
-                    <span className="block text-xs text-muted">{fmtDateTime(t.entryDate)}</span>
+                    <span className="block text-xs text-muted">
+                      {fmtDateTime(t.entryDate)} · <span className="text-accent/80">{killzone(t.entryDate)}</span>
+                    </span>
                   </td>
                   <td className="px-2 py-2.5 whitespace-nowrap text-ink-2">
                     {t.exitPrice != null ? (
@@ -109,7 +112,14 @@ export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currenc
                   <td className={`px-2 py-2.5 text-right font-medium tabular-nums ${pnl == null ? "text-muted" : pnl >= 0 ? "text-profit" : "text-loss"}`}>
                     {pnl == null ? "—" : fmtSignedMoney(pnl, currency)}
                   </td>
-                  <td className="px-2 py-2.5 text-ink-2">{t.strategy ?? <span className="text-muted">—</span>}</td>
+                  <td className="px-2 py-2.5 text-ink-2">
+                    {t.strategy ?? <span className="text-muted">—</span>}
+                    {t.concepts && (
+                      <span className="mt-0.5 block max-w-40 truncate text-xs text-muted" title={t.concepts}>
+                        {t.concepts}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-2 py-2.5">
                     {t.screenshotPath ? (
                       <a href={t.screenshotPath} target="_blank" rel="noreferrer" className="text-accent hover:underline">

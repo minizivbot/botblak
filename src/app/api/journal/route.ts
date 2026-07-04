@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { journalSchema, zodMessage } from "@/lib/validation";
+import { requireUserId } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const entries = await prisma.journalEntry.findMany({ orderBy: { date: "desc" } });
+    const userId = await requireUserId();
+    if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
+    const entries = await prisma.journalEntry.findMany({ where: { userId }, orderBy: { date: "desc" } });
     return NextResponse.json({ entries });
   } catch (e) {
     console.error("GET /api/journal failed:", e);
@@ -15,6 +19,9 @@ export async function GET() {
 /** Upsert the entry for a given day. */
 export async function POST(req: NextRequest) {
   try {
+    const userId = await requireUserId();
+    if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
 
@@ -23,9 +30,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: zodMessage(parsed.error) }, { status: 400 });
     }
     const entry = await prisma.journalEntry.upsert({
-      where: { date: parsed.data.date },
+      where: { userId_date: { userId, date: parsed.data.date } },
       update: parsed.data,
-      create: parsed.data,
+      create: { ...parsed.data, userId },
     });
     return NextResponse.json({ entry });
   } catch (e) {
@@ -36,9 +43,12 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const userId = await requireUserId();
+    if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
     const date = req.nextUrl.searchParams.get("date");
     if (!date) return NextResponse.json({ error: "date query param required" }, { status: 400 });
-    await prisma.journalEntry.delete({ where: { date } }).catch(() => null);
+    await prisma.journalEntry.delete({ where: { userId_date: { userId, date } } }).catch(() => null);
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("DELETE /api/journal failed:", e);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const icons: Record<string, React.ReactNode> = {
@@ -34,12 +34,18 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.2 5.2l1.4 1.4M13.4 13.4l1.4 1.4M14.8 5.2l-1.4 1.4M6.6 13.4l-1.4 1.4" strokeLinecap="round" />
     </svg>
   ),
+  motivation: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <path d="M10 2.5c1.5 2.5 4.5 4 4.5 8a4.5 4.5 0 01-9 0c0-1.8.8-3.2 1.8-4.6.5.9 1.2 1.5 1.2 1.5C8.5 5.5 9.4 4 10 2.5z" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 const links = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
   { href: "/trades", label: "Trades", icon: "trades" },
   { href: "/journal", label: "Journal", icon: "journal" },
+  { href: "/motivation", label: "Daily Motivation", icon: "motivation" },
   { href: "/import", label: "Import & Sync", icon: "import" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
@@ -53,14 +59,23 @@ function Logo() {
           <path d="M13 4h4v4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      <span className="text-base font-bold tracking-tight">TradeLog</span>
+      <span className="text-base font-bold tracking-tight">TradeZone</span>
     </span>
   );
 }
 
 export function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  async function signOut() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    router.push("/login");
+    router.refresh();
+  }
+
+  if (pathname === "/login" || pathname === "/register") return null;
 
   const items = links.map((l) => {
     const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
@@ -102,7 +117,12 @@ export function Nav() {
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-edge bg-surface/60 p-4 backdrop-blur md:flex">
         <Link href="/" className="mb-8 px-2 pt-1"><Logo /></Link>
         <nav className="space-y-1">{items}</nav>
-        <p className="mt-auto px-3 text-xs text-muted">Local SQLite · private by default</p>
+        <div className="mt-auto space-y-2 px-3">
+          <button onClick={signOut} className="text-xs text-muted transition-colors hover:text-ink-2">
+            Sign out
+          </button>
+          <p className="text-xs text-muted">Private by default</p>
+        </div>
       </aside>
     </>
   );
