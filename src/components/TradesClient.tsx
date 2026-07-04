@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { TradeDTO } from "@/lib/dto";
 import { tradePnl } from "@/lib/pnl";
+import { killzone } from "@/lib/killzones";
 import { fmtMoney, fmtSignedMoney, fmtDateTime, fmtNum } from "@/lib/format";
 import { TradeFormModal } from "./TradeFormModal";
 
@@ -92,7 +93,9 @@ export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currenc
                   </td>
                   <td className="px-2 py-2.5 whitespace-nowrap text-ink-2">
                     {fmtNum(t.entryPrice, 4)}
-                    <span className="block text-xs text-muted">{fmtDateTime(t.entryDate)}</span>
+                    <span className="block text-xs text-muted">
+                      {fmtDateTime(t.entryDate)} · <span className="text-accent/80">{killzone(t.entryDate)}</span>
+                    </span>
                   </td>
                   <td className="px-2 py-2.5 whitespace-nowrap text-ink-2">
                     {t.exitPrice != null ? (

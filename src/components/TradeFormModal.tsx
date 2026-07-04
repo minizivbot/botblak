@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { TradeDTO } from "@/lib/dto";
+import { ICT_SETUPS } from "@/lib/killzones";
 
 type Props = {
   trade: TradeDTO | null; // null = create
@@ -137,9 +138,9 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
 
           <div>
             <label className="field-label">Strategy tag</label>
-            <input className="field" value={form.strategy} onChange={set("strategy")} placeholder="Opening Range, Breakout…" list="strategy-suggestions" />
+            <input className="field" value={form.strategy} onChange={set("strategy")} placeholder="Silver Bullet, FVG, Order Block…" list="strategy-suggestions" />
             <datalist id="strategy-suggestions">
-              {["Opening Range", "Breakout", "Pullback", "Mean Reversion", "Trend Follow", "News"].map((s) => (
+              {ICT_SETUPS.map((s) => (
                 <option key={s} value={s} />
               ))}
             </datalist>

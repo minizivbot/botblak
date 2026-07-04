@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { KILLZONES, killzone, type Killzone } from "./killzones";
 
 export type TradeFilters = {
   from?: string; // YYYY-MM-DD
@@ -6,6 +7,7 @@ export type TradeFilters = {
   symbol?: string;
   strategy?: string;
   direction?: "LONG" | "SHORT";
+  killzone?: Killzone;
 };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -18,13 +20,21 @@ export function parseFilters(params: Record<string, string | string[] | undefine
   const from = get("from");
   const to = get("to");
   const direction = get("direction")?.toUpperCase();
+  const kz = get("killzone");
   return {
     from: from && DATE_RE.test(from) ? from : undefined,
     to: to && DATE_RE.test(to) ? to : undefined,
     symbol: get("symbol")?.toUpperCase(),
     strategy: get("strategy"),
     direction: direction === "LONG" || direction === "SHORT" ? direction : undefined,
+    killzone: kz && (KILLZONES as readonly string[]).includes(kz) ? (kz as Killzone) : undefined,
   };
+}
+
+/** Killzone is computed from entryDate, so it filters in memory after the query. */
+export function applyKillzoneFilter<T extends { entryDate: Date }>(trades: T[], f: TradeFilters): T[] {
+  if (!f.killzone) return trades;
+  return trades.filter((t) => killzone(t.entryDate) === f.killzone);
 }
 
 export function filtersToWhere(f: TradeFilters): Prisma.TradeWhereInput {
