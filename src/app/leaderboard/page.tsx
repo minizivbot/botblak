@@ -1,0 +1,126 @@
+import { prisma } from "@/lib/prisma";
+import { getViewer } from "@/lib/viewer";
+import { computeStats, type StatsTrade } from "@/lib/stats";
+import { fmtSignedMoney, fmtPct } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Leaderboard" };
+
+type Row = {
+  username: string;
+  isYou: boolean;
+  pnl: number;
+  winRate: number | null;
+  trades: number;
+  funded: boolean;
+  currency: string;
+};
+
+export default async function LeaderboardPage() {
+  const { username } = await getViewer();
+
+  const users = await prisma.user.findMany({
+    select: {
+      username: true,
+      settings: { select: { currency: true } },
+      accounts: { select: { propFunded: true } },
+      trades: {
+        select: { symbol: true, direction: true, entryPrice: true, exitPrice: true, size: true, fees: true, entryDate: true, exitDate: true },
+      },
+    },
+  });
+
+  const rows: Row[] = users
+    .map((u) => {
+      const stats = computeStats(u.trades as StatsTrade[], 0);
+      return {
+        username: u.username,
+        isYou: u.username === username,
+        pnl: stats.totalPnl,
+        winRate: stats.winRate,
+        trades: stats.closedCount,
+        funded: u.accounts.some((a) => a.propFunded),
+        currency: u.settings?.currency ?? "USD",
+      };
+    })
+    .filter((r) => r.trades > 0)
+    .sort((a, b) => b.pnl - a.pnl);
+
+  const medals = ["🥇", "🥈", "🥉"];
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4">
+      <div>
+        <h1 className="text-xl font-semibold">Leaderboard</h1>
+        <p className="mt-1 text-sm text-muted">
+          Every trader on TradeZone, ranked by net P&L. Pass a prop challenge and you get the FUNDED badge automatically.
+        </p>
+      </div>
+
+      {/* Podium — top 3 */}
+      {rows.length >= 1 && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {rows.slice(0, 3).map((r, i) => (
+            <div
+              key={r.username}
+              className={`card flex flex-col items-center text-center ${
+                i === 0 ? "!border-yellow-500/40 bg-yellow-500/5" : ""
+              } ${r.isYou ? "ring-1 ring-accent/50" : ""}`}
+            >
+              <div className="text-3xl">{medals[i]}</div>
+              <p className="mt-1 truncate text-sm font-semibold">
+                {r.username}
+                {r.isYou && <span className="ml-1 text-xs text-accent">you</span>}
+              </p>
+              {r.funded && (
+                <span className="mt-1 rounded-full bg-profit/15 px-2 py-0.5 text-[10px] font-bold text-profit">FUNDED ✓</span>
+              )}
+              <p className={`mt-2 text-xl font-bold ${r.pnl >= 0 ? "text-profit" : "text-loss"}`}>
+                {fmtSignedMoney(r.pnl, r.currency)}
+              </p>
+              <p className="text-xs text-muted">
+                {r.winRate != null ? `${fmtPct(r.winRate)} win` : "—"} · {r.trades} trades
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* The rest */}
+      {rows.length > 3 && (
+        <div className="card overflow-x-auto p-0">
+          <table className="w-full min-w-[440px] text-sm">
+            <thead>
+              <tr className="border-b border-edge text-left text-xs text-muted">
+                <th className="px-4 py-2.5 font-medium">#</th>
+                <th className="px-4 py-2.5 font-medium">Trader</th>
+                <th className="px-4 py-2.5 text-right font-medium">Net P&L</th>
+                <th className="px-4 py-2.5 text-right font-medium">Win rate</th>
+                <th className="px-4 py-2.5 text-right font-medium">Trades</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.slice(3).map((r, i) => (
+                <tr key={r.username} className={`border-b border-edge/50 last:border-0 ${r.isYou ? "bg-accent/5" : ""}`}>
+                  <td className="px-4 py-2.5 text-muted">{i + 4}</td>
+                  <td className="px-4 py-2.5 font-medium">
+                    {r.username}
+                    {r.isYou && <span className="ml-1 text-xs text-accent">you</span>}
+                    {r.funded && <span className="ml-2 rounded-full bg-profit/15 px-1.5 py-0.5 text-[10px] font-bold text-profit">FUNDED</span>}
+                  </td>
+                  <td className={`px-4 py-2.5 text-right font-semibold tabular-nums ${r.pnl >= 0 ? "text-profit" : "text-loss"}`}>
+                    {fmtSignedMoney(r.pnl, r.currency)}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-2">{r.winRate != null ? fmtPct(r.winRate) : "—"}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-muted">{r.trades}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {rows.length === 0 && <p className="card text-sm text-muted">No traders with closed trades yet — be the first!</p>}
+    </div>
+  );
+}

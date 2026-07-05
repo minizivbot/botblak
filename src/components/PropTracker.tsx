@@ -14,7 +14,17 @@ function Bar({ pct, tone }: { pct: number; tone: "good" | "warn" | "bad" }) {
  * Prop-firm dashboard card: profit-target progress and trailing-drawdown
  * cushion — the two numbers that decide whether a funded account survives.
  */
-export function PropTracker({ status, accountName, currency }: { status: PropStatus; accountName: string; currency: string }) {
+export function PropTracker({
+  status,
+  accountName,
+  currency,
+  funded = false,
+}: {
+  status: PropStatus;
+  accountName: string;
+  currency: string;
+  funded?: boolean;
+}) {
   if (!status.enabled) return null;
 
   const cushionPct =
@@ -27,11 +37,20 @@ export function PropTracker({ status, accountName, currency }: { status: PropSta
       <div className="mb-3 flex items-center justify-between">
         <h2 className="card-title mb-0 flex items-center gap-2">
           <span>🏦</span> Prop account · {accountName}
+          {funded && (
+            <span className="rounded-full bg-profit/15 px-2 py-0.5 text-xs font-bold text-profit">FUNDED ✓</span>
+          )}
         </h2>
         <span className="text-sm text-muted">
           Balance <span className="font-semibold text-ink">{fmtMoney(status.currentBalance, currency)}</span>
         </span>
       </div>
+
+      {funded && (
+        <p className="mb-3 rounded-lg border border-profit/40 bg-profit/10 px-3 py-2 text-sm font-semibold text-profit">
+          🎉 Challenge passed — this account is now marked FUNDED. Keep protecting the drawdown.
+        </p>
+      )}
 
       {status.breached && (
         <p className="mb-3 rounded-lg border border-loss/50 bg-loss/10 px-3 py-2 text-sm font-semibold text-loss">

@@ -27,6 +27,11 @@ function nowInput(): string {
 }
 
 export function TradeFormModal({ trade, accounts, userConcepts, currency, onClose, onSaved }: Props) {
+  const copyAccounts = accounts.filter((a) => a.isCopy);
+  const soloAccounts = accounts.filter((a) => !a.isCopy);
+  // New trades default to "all copy accounts" when copy accounts exist, else
+  // the first regular account.
+  const defaultAccountId = trade?.accountId ?? (copyAccounts.length > 0 ? "__copy__" : soloAccounts[0]?.id ?? accounts[0]?.id ?? "");
   // Existing trades store size = contracts × $/pt; derive contracts back out
   // using the symbol's point value so editing shows a plain contract count.
   const initialContracts = (() => {
@@ -48,7 +53,7 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
     exitDate: toLocalInput(trade?.exitDate ?? null),
     strategy: trade?.strategy ?? "",
     notes: trade?.notes ?? "",
-    accountId: trade?.accountId ?? accounts[0]?.id ?? "",
+    accountId: defaultAccountId,
   });
   const [conceptList, setConceptList] = useState<string[]>(userConcepts);
   const [concepts, setConcepts] = useState<string[]>(
@@ -127,7 +132,7 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
         screenshotPath = upBody.path;
       }
 
-      const payload = {
+      const base = {
         symbol: form.symbol,
         direction: form.direction,
         entryPrice: Number(form.entryPrice),
@@ -139,17 +144,35 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
         strategy: form.strategy || null,
         concepts: concepts.length ? concepts.join(", ") : null,
         notes: form.notes || null,
-        accountId: form.accountId || null,
         screenshotPath,
       };
 
-      const res = await fetch(trade ? `/api/trades/${trade.id}` : "/api/trades", {
-        method: trade ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || "Failed to save trade");
+      // "__copy__" mirrors the trade into every copy account at once; otherwise
+      // it goes to the single chosen account.
+      const targetIds =
+        form.accountId === "__copy__"
+          ? accounts.filter((a) => a.isCopy).map((a) => a.id)
+          : [form.accountId || null];
+
+      if (trade) {
+        const res = await fetch(`/api/trades/${trade.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...base, accountId: form.accountId === "__copy__" ? trade.accountId : form.accountId || null }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || "Failed to save trade");
+      } else {
+        for (const accountId of targetIds) {
+          const res = await fetch("/api/trades", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...base, accountId }),
+          });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(body.error || "Failed to save trade");
+        }
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -171,13 +194,22 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
             <div>
               <label className="field-label">Trading account</label>
               <select className="field" value={form.accountId} onChange={set("accountId")}>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}{a.isCopy ? " (copy)" : ""}
-                  </option>
+                {copyAccounts.length > 0 && !trade && (
+                  <option value="__copy__">🔁 Copy — all {copyAccounts.length} copy accounts</option>
+                )}
+                {soloAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+                {copyAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name} (copy)</option>
                 ))}
                 <option value="">No account</option>
               </select>
+              {form.accountId === "__copy__" && (
+                <p className="mt-1 text-xs text-accent">
+                  Saves this trade into all {copyAccounts.length} copy accounts at once.
+                </p>
+              )}
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">

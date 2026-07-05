@@ -62,13 +62,21 @@ export default async function DashboardPage({
       (!filters.account || filters.account === a.id || (filters.account === "copy" && a.isCopy)),
   );
   const propStatuses = await Promise.all(
-    propAccounts.map(async (a) => ({
-      account: a,
-      trades: await prisma.trade.findMany({
+    propAccounts.map(async (a) => {
+      const at = await prisma.trade.findMany({
         where: { userId, accountId: a.id },
         select: { direction: true, entryPrice: true, exitPrice: true, size: true, fees: true, exitDate: true },
-      }),
-    })),
+      });
+      const status = propStatus(a, at);
+      // Auto-promote a challenge to "funded" the first time it passes the
+      // target without a drawdown breach.
+      let funded = a.propFunded;
+      if (!isDemo && !funded && status.targetReached && !status.breached) {
+        await prisma.account.update({ where: { id: a.id }, data: { propFunded: true } });
+        funded = true;
+      }
+      return { account: a, status, funded };
+    }),
   );
 
   const [settings, tradesRaw, symbolRows, strategyRows] = await Promise.all([
@@ -157,12 +165,13 @@ export default async function DashboardPage({
 
       <AccountSwitcher accounts={accounts} />
 
-      {propStatuses.map(({ account, trades: at }) => (
+      {propStatuses.map(({ account, status, funded }) => (
         <PropTracker
           key={account.id}
           accountName={account.name}
           currency={currency}
-          status={propStatus(account, at)}
+          status={status}
+          funded={funded}
         />
       ))}
 

@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ["/login", "/register"];
 
 // Pages a logged-out visitor may browse as a live demo (read-only). Everything
 // else (journal, import, settings, all mutating APIs) still requires sign-in.
-const GUEST_PAGES = ["/", "/trades", "/learn", "/motivation", "/opengraph-image"];
+const GUEST_PAGES = ["/", "/trades", "/learn", "/motivation", "/leaderboard", "/opengraph-image"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

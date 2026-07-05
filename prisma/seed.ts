@@ -156,6 +156,52 @@ async function main() {
     create: { userId: demo.id, startingBalance: 25000, currency: "USD" },
   });
 
+  // A few sample competitors so the public leaderboard looks alive. Each gets
+  // a small run of MES trades with a fixed edge so ranks are deterministic.
+  const competitors = [
+    { username: "sniper_fx", win: 0.72, n: 40, funded: true },
+    { username: "liquidity_hunter", win: 0.61, n: 32, funded: true },
+    { username: "killzone_kid", win: 0.55, n: 28, funded: false },
+    { username: "fvg_flow", win: 0.48, n: 24, funded: false },
+    { username: "asia_range", win: 0.4, n: 20, funded: false },
+  ];
+  for (const c of competitors) {
+    const u = await prisma.user.upsert({
+      where: { username: c.username },
+      update: {},
+      create: { username: c.username, passwordHash: hashPassword("demo1234") },
+    });
+    await prisma.trade.deleteMany({ where: { userId: u.id, source: "seed" } });
+    let day = new Date("2026-05-01T14:00:00Z").getTime();
+    for (let i = 0; i < c.n; i++) {
+      const winTrade = i / c.n < c.win;
+      const move = winTrade ? 12 : -8; // points on 2 MES ($5/pt) → +$120 / -$80
+      await prisma.trade.create({
+        data: {
+          userId: u.id,
+          symbol: "MES",
+          direction: "LONG",
+          entryPrice: 6900,
+          exitPrice: 6900 + move,
+          size: 10, // 2 MES x $5/pt
+          fees: 2.5,
+          entryDate: new Date(day),
+          exitDate: new Date(day + 3600e3),
+          strategy: "Silver Bullet",
+          source: "seed",
+        },
+      });
+      day += 86400e3;
+    }
+    if (c.funded) {
+      await prisma.account.upsert({
+        where: { userId_name: { userId: u.id, name: "Funded" } },
+        update: { propFunded: true, isCopy: false, propStartBalance: 50000, propProfitTarget: 3000 },
+        create: { userId: u.id, name: "Funded", propFunded: true, propStartBalance: 50000, propProfitTarget: 3000 },
+      });
+    }
+  }
+
   console.log(
     `Seeded demo account (demo / demo1234) with ${trades.length} futures trades and ${journalEntries.length} journal entries.`,
   );

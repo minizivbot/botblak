@@ -50,6 +50,7 @@ model Account {
   propMaxDrawdown     Float? // max trailing drawdown from peak (e.g. 2000)
   propDrawdownType    String? // "trailing" | "static"
   propMaxDailyLoss    Float? // per-account daily loss limit
+  propFunded          Boolean @default(false) // auto-set true once the target is passed
   createdAt DateTime @default(now())
   trades    Trade[]
 
