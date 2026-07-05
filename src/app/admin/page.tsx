@@ -85,9 +85,9 @@ export default async function AdminPage() {
       </div>
 
       <p className="text-xs text-muted">
-        You&apos;re an admin via the <code className="text-ink-2">ADMIN_USERNAMES</code> env var or the account&apos;s
-        admin flag. Manage the app itself in{" "}
-        <Link href="/settings" className="text-accent hover:underline">Settings</Link>.
+        Admin access is granted by a verified email (<code className="text-ink-2">ADMIN_EMAILS</code>), a username
+        (<code className="text-ink-2">ADMIN_USERNAMES</code>), or the account&apos;s database admin flag. Email is the
+        most secure since it can&apos;t be changed in-app.
       </p>
     </div>
   );

@@ -19,6 +19,16 @@ export async function PUT(req: NextRequest) {
     const parsed = usernameSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: zodMessage(parsed.error) }, { status: 400 });
 
+    // Security: don't let anyone claim a username configured as an admin, which
+    // would otherwise be a privilege-escalation path via rename.
+    const adminNames = (process.env.ADMIN_USERNAMES || "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    if (adminNames.includes(parsed.data.username.toLowerCase())) {
+      return NextResponse.json({ error: "That username isn't available" }, { status: 409 });
+    }
+
     const taken = await prisma.user.findFirst({
       where: { username: parsed.data.username, NOT: { id: userId } },
       select: { id: true },
