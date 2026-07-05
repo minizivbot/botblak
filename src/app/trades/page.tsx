@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
+import { ensureDefaultAccount } from "@/lib/accounts";
+import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
 import { parseConcepts } from "@/lib/concepts";
 import { toTradeDTO } from "@/lib/dto";
@@ -17,6 +19,7 @@ export default async function TradesPage({
 }) {
   const userId = await requireUserId();
   if (!userId) redirect("/login");
+  await ensureDefaultAccount(userId);
 
   const filters = parseFilters(await searchParams);
   const accounts = await prisma.account.findMany({
@@ -42,10 +45,10 @@ export default async function TradesPage({
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Trades</h1>
+      <AccountSwitcher accounts={accounts} />
       <FilterBar
         symbols={symbolRows.map((r) => r.symbol)}
         strategies={strategyRows.map((r) => r.strategy!).sort()}
-        accounts={accounts}
       />
       <TradesClient
         trades={trades.map(toTradeDTO)}

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
+import { ensureDefaultAccount } from "@/lib/accounts";
+import { AccountSwitcher } from "@/components/AccountSwitcher";
+import { CountUp } from "@/components/CountUp";
 import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
 import {
   computeStats,
@@ -34,6 +37,7 @@ export default async function DashboardPage({
 }) {
   const userId = await requireUserId();
   if (!userId) redirect("/login");
+  await ensureDefaultAccount(userId);
 
   const filters = parseFilters(await searchParams);
   const accounts = await prisma.account.findMany({
@@ -83,7 +87,7 @@ export default async function DashboardPage({
           <h1 className="text-sm font-medium text-muted">Net P&L</h1>
           <div className="mt-1 flex flex-wrap items-baseline gap-3">
             <p className={`text-4xl font-bold tracking-tight sm:text-5xl ${stats.totalPnl >= 0 ? "text-profit" : "text-loss"}`}>
-              {fmtSignedMoney(stats.totalPnl, currency)}
+              <CountUp value={stats.totalPnl} currency={currency} />
             </p>
             {returnPct != null && (
               <span
@@ -104,10 +108,11 @@ export default async function DashboardPage({
         </p>
       </div>
 
+      <AccountSwitcher accounts={accounts} />
+
       <FilterBar
         symbols={symbolRows.map((r) => r.symbol)}
         strategies={strategyRows.map((r) => r.strategy!).sort()}
-        accounts={accounts}
       />
 
       {/* Stat tiles */}

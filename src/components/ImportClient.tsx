@@ -212,6 +212,50 @@ function CsvImport() {
 /* ---------------- Broker API sync ---------------- */
 
 type CredField = { key: string; label: string; type?: "text" | "password"; placeholder?: string; optional?: boolean };
+
+/** Step-by-step "where do I get these credentials?" guides, shown on the site. */
+const BROKER_GUIDES: Record<string, { intro: string; steps: string[] }> = {
+  alpaca: {
+    intro: "Free stock paper-trading API — great for practicing with US stocks.",
+    steps: [
+      "Go to alpaca.markets and create a free account.",
+      "Open the dashboard and switch to \"Paper Trading\" (toggle at the top-left).",
+      "In the right sidebar find \"API Keys\" and press \"Generate\".",
+      "Copy the Key ID and the Secret Key and paste them here, then press Verify & connect.",
+      "From now on, one tap on \"Sync now\" pulls all your filled orders into the journal.",
+    ],
+  },
+  tradovate: {
+    intro: "Futures broker (ES, NQ, MES, MNQ…). Works with your normal login — no API key needed.",
+    steps: [
+      "Use the same username and password you use to sign in to Tradovate itself.",
+      "Type \"demo\" for a demo/sim account or \"live\" for a funded live account.",
+      "Press Verify & connect — we sign in to Tradovate once to confirm the details are right.",
+      "Press \"Sync now\" — your fills are pulled, paired into trades, and priced with real futures point values (ES $50/pt, MES $5/pt…).",
+      "Prop accounts that log in through Tradovate (Apex, TakeProfit, etc.) work with those same credentials.",
+    ],
+  },
+};
+
+function TradingViewCard() {
+  return (
+    <div className="rounded-xl border border-edge bg-raised/40 p-3">
+      <p className="text-sm font-semibold">TradingView</p>
+      <p className="mt-1 text-xs text-muted">○ No API — use CSV import instead</p>
+      <div className="mt-2 space-y-1.5 text-sm text-ink-2">
+        <p>
+          TradingView doesn&apos;t offer an API for reading your trade history, so no app can connect to it with a
+          password. The good news: exporting takes 30 seconds —
+        </p>
+        <ol className="list-decimal space-y-1 pl-5 text-sm">
+          <li>Open the chart → Trading Panel → your paper-trading account.</li>
+          <li>Go to the <span className="text-ink">History</span> tab, right-click the table → <span className="text-ink">Export data</span> (CSV).</li>
+          <li>Come back here, choose the <span className="text-ink">Generic CSV</span> preset in the CSV import above, pick the file, and map the columns.</li>
+        </ol>
+      </div>
+    </div>
+  );
+}
 type BrokerConn = {
   id: string;
   label: string;
@@ -330,6 +374,22 @@ function BrokerSync() {
               </div>
             </div>
 
+            {BROKER_GUIDES[b.id] && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-xs font-medium text-accent hover:underline">
+                  How do I connect this? Step-by-step guide
+                </summary>
+                <div className="mt-2 rounded-lg border border-edge bg-surface/60 p-3">
+                  <p className="text-sm text-ink-2">{BROKER_GUIDES[b.id].intro}</p>
+                  <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-ink-2">
+                    {BROKER_GUIDES[b.id].steps.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ol>
+                </div>
+              </details>
+            )}
+
             {openForm === b.id && (
               <form
                 className="mt-3 space-y-2 border-t border-edge pt-3"
@@ -375,6 +435,8 @@ function BrokerSync() {
           </div>
         );
       })}
+
+      <TradingViewCard />
     </section>
   );
 }
