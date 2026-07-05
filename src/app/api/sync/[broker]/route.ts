@@ -1,23 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getBroker, BrokerError, brokers } from "@/lib/brokers";
+import { getBroker, BrokerError, brokers, type BrokerCredentials } from "@/lib/brokers";
 import { requireUserId } from "@/lib/auth";
+import { decryptJson } from "@/lib/secretbox";
 
-/** GET: list available brokers and whether their keys are configured. */
+/** GET: list available brokers and whether they're usable for this user. */
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ broker: string }> }) {
   const { broker } = await ctx.params;
+  const userId = await requireUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
+  const connections = await prisma.brokerConnection.findMany({
+    where: { userId },
+    select: { broker: true },
+  });
+  const connected = new Set(connections.map((c) => c.broker));
+
   if (broker === "status") {
     return NextResponse.json({
       brokers: Object.values(brokers).map((b) => ({
         id: b.id,
         label: b.label,
-        configured: b.isConfigured(),
+        configured: connected.has(b.id) || b.envConfigured(),
       })),
     });
   }
   const adapter = getBroker(broker);
   if (!adapter) return NextResponse.json({ error: `Unknown broker "${broker}"` }, { status: 404 });
-  return NextResponse.json({ id: adapter.id, label: adapter.label, configured: adapter.isConfigured() });
+  return NextResponse.json({
+    id: adapter.id,
+    label: adapter.label,
+    configured: connected.has(adapter.id) || adapter.envConfigured(),
+  });
 }
 
 /** POST: sync trades from the broker's API into the journal. */
@@ -32,7 +46,11 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ broker: s
   }
 
   try {
-    const { trades, detail } = await adapter.fetchTrades();
+    const connection = await prisma.brokerConnection.findUnique({
+      where: { userId_broker: { userId, broker: adapter.id } },
+    });
+    const creds = connection ? decryptJson<BrokerCredentials>(connection.credentials) : null;
+    const { trades, detail } = await adapter.fetchTrades(creds);
 
     let imported = 0;
     let skipped = 0;

@@ -1,4 +1,4 @@
-import { BrokerAdapter, BrokerError, SyncResult } from "./types";
+import { BrokerAdapter, BrokerCredentials, BrokerError, SyncResult } from "./types";
 import { pairFillsFifo, type Fill } from "./fifo";
 
 type TvFill = {
@@ -18,31 +18,61 @@ type TvFillFee = { id: number } & Record<string, unknown>;
 
 const FEE_FIELDS = ["clearingFee", "exchangeFee", "nfaFee", "brokerageFee", "commission", "orderRoutingFee"];
 
+type Resolved = { username: string; password: string; env: "demo" | "live"; cid?: string; sec?: string };
+
+function resolve(creds: BrokerCredentials | null): Resolved | null {
+  if (creds?.username && creds?.password) {
+    return {
+      username: creds.username,
+      password: creds.password,
+      env: creds.env?.toLowerCase() === "live" ? "live" : "demo",
+      cid: creds.cid || undefined,
+      sec: creds.sec || undefined,
+    };
+  }
+  if (process.env.TRADOVATE_USERNAME && process.env.TRADOVATE_PASSWORD) {
+    return {
+      username: process.env.TRADOVATE_USERNAME,
+      password: process.env.TRADOVATE_PASSWORD,
+      env: (process.env.TRADOVATE_ENV || "demo").toLowerCase() === "live" ? "live" : "demo",
+      cid: process.env.TRADOVATE_CID || undefined,
+      sec: process.env.TRADOVATE_SEC || undefined,
+    };
+  }
+  return null;
+}
+
 /**
- * Tradovate adapter (futures). Authenticates with the account's username and
- * password from .env (plus optional API cid/sec if you have an API key) and
- * pairs fills FIFO into round-trip trades. Futures P&L uses the product's
- * value-per-point, folded into the trade size so (exit - entry) x size is the
- * correct dollar P&L.
+ * Tradovate adapter (futures). Signs in with the account's username/password,
+ * pairs fills FIFO into round trips, and prices futures P&L with each
+ * product's value-per-point folded into the trade size.
  */
 export const tradovateAdapter: BrokerAdapter = {
   id: "tradovate",
-  label: `Tradovate (${(process.env.TRADOVATE_ENV || "demo").toLowerCase() === "live" ? "live" : "demo"})`,
+  label: "Tradovate (futures)",
+  credentialFields: [
+    { key: "username", label: "Username" },
+    { key: "password", label: "Password", type: "password" },
+    { key: "env", label: "Environment (demo / live)", placeholder: "demo", optional: true },
+  ],
 
-  isConfigured() {
+  envConfigured() {
     return Boolean(process.env.TRADOVATE_USERNAME && process.env.TRADOVATE_PASSWORD);
   },
 
-  async fetchTrades(): Promise<SyncResult> {
-    if (!this.isConfigured()) {
-      throw new BrokerError(
-        "Tradovate credentials are not configured. Set TRADOVATE_USERNAME and TRADOVATE_PASSWORD in .env (see README).",
-      );
-    }
-    const env = (process.env.TRADOVATE_ENV || "demo").toLowerCase() === "live" ? "live" : "demo";
-    const baseUrl = `https://${env}.tradovate.com/v1`;
+  async verify(creds: BrokerCredentials): Promise<void> {
+    const r = resolve(creds);
+    if (!r) throw new BrokerError("Username and password are required.");
+    await authenticate(r); // throws BrokerError when rejected
+  },
 
-    const token = await authenticate(baseUrl);
+  async fetchTrades(creds: BrokerCredentials | null): Promise<SyncResult> {
+    const r = resolve(creds);
+    if (!r) {
+      throw new BrokerError("Tradovate is not connected. Add your username and password on the Import & Sync page.");
+    }
+    const baseUrl = `https://${r.env}.tradovate.com/v1`;
+    const token = await authenticate(r);
     const get = <T>(path: string) => apiGet<T>(baseUrl, token, path);
 
     const [rawFills, contracts, products, fillFees] = await Promise.all([
@@ -53,15 +83,12 @@ export const tradovateAdapter: BrokerAdapter = {
     ]);
 
     const contractName = new Map(contracts.map((c) => [c.id, c.name]));
-    // Missing contracts (list can be truncated) are fetched individually.
     const missing = [...new Set(rawFills.map((f) => f.contractId))].filter((id) => !contractName.has(id));
     for (const chunk of chunks(missing, 50)) {
       const items = await get<TvContract[]>(`/contract/items?ids=${chunk.join(",")}`).catch(() => []);
       for (const c of items) contractName.set(c.id, c.name);
     }
 
-    // Product value-per-point, matched by longest product-name prefix of the
-    // contract name (e.g. "ESM6" -> "ES", "MESM6" -> "MES").
     const byLen = [...products].sort((a, b) => b.name.length - a.name.length);
     const pointValue = (contract: string): { mult: number; product?: string } => {
       const p = byLen.find((p) => contract.startsWith(p.name));
@@ -94,21 +121,20 @@ export const tradovateAdapter: BrokerAdapter = {
 
     return {
       trades: pairFillsFifo(fills, "tradovate"),
-      detail: `Fetched ${rawFills.length} fills from Tradovate ${env}.`,
+      detail: `Fetched ${rawFills.length} fills from Tradovate ${r.env}.`,
     };
   },
 };
 
-async function authenticate(baseUrl: string): Promise<string> {
+async function authenticate(r: Resolved): Promise<string> {
+  const baseUrl = `https://${r.env}.tradovate.com/v1`;
   const body = {
-    name: process.env.TRADOVATE_USERNAME!,
-    password: process.env.TRADOVATE_PASSWORD!,
-    appId: process.env.TRADOVATE_APP_ID || "TradingJournal",
+    name: r.username,
+    password: r.password,
+    appId: process.env.TRADOVATE_APP_ID || "TradeZone",
     appVersion: "1.0",
-    deviceId: process.env.TRADOVATE_DEVICE_ID || "trading-journal-local",
-    ...(process.env.TRADOVATE_CID && process.env.TRADOVATE_SEC
-      ? { cid: Number(process.env.TRADOVATE_CID), sec: process.env.TRADOVATE_SEC }
-      : {}),
+    deviceId: process.env.TRADOVATE_DEVICE_ID || "tradezone-web",
+    ...(r.cid && r.sec ? { cid: Number(r.cid), sec: r.sec } : {}),
   };
 
   let res: Response;
@@ -136,7 +162,7 @@ async function authenticate(baseUrl: string): Promise<string> {
   }
   if (!res.ok || !data.accessToken) {
     throw new BrokerError(
-      `Tradovate login failed: ${data.errorText || `HTTP ${res.status}`}. Check TRADOVATE_USERNAME/PASSWORD in .env.`,
+      `Tradovate login failed: ${data.errorText || `HTTP ${res.status}`}. Check the username and password.`,
       res.status === 200 ? 401 : res.status,
     );
   }
@@ -154,7 +180,7 @@ async function apiGet<T>(baseUrl: string, token: string, path: string): Promise<
     throw new BrokerError(`Tradovate request ${path} failed: ${e instanceof Error ? e.message : String(e)}`);
   }
   if (res.status === 401 || res.status === 403) {
-    throw new BrokerError("Tradovate rejected the session (401/403). Check your credentials.", res.status);
+    throw new BrokerError("Tradovate rejected the session (401/403). Re-connect with valid credentials.", res.status);
   }
   if (!res.ok) {
     const text = await res.text().catch(() => "");

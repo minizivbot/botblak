@@ -13,4 +13,4 @@ export function getBroker(id: string): BrokerAdapter | undefined {
 }
 
 export { BrokerError } from "./types";
-export type { BrokerAdapter, NormalizedTrade, SyncResult } from "./types";
+export type { BrokerAdapter, BrokerCredentials, NormalizedTrade, SyncResult } from "./types";

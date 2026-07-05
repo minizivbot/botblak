@@ -10,13 +10,28 @@ datasource db {
 model User {
   id           String         @id @default(cuid())
   username     String         @unique
-  passwordHash String
+  passwordHash String? // null for Google-only accounts
+  email        String?        @unique
+  googleId     String?        @unique
   concepts     String? // JSON array of the user's personal concept list
   createdAt    DateTime       @default(now())
   trades       Trade[]
   journal      JournalEntry[]
   settings     Settings?
   accounts     Account[]
+  brokerConnections BrokerConnection[]
+}
+
+model BrokerConnection {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  broker      String // adapter id: "alpaca" | "tradovate"
+  credentials String // AES-256-GCM encrypted JSON, key derived from AUTH_SECRET
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, broker])
 }
 
 model Account {

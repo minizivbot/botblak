@@ -13,7 +13,6 @@ import {
   type TradeField,
 } from "@/lib/csv";
 
-type Broker = { id: string; label: string; configured: boolean };
 
 /* ---------------- CSV import ---------------- */
 
@@ -212,34 +211,71 @@ function CsvImport() {
 
 /* ---------------- Broker API sync ---------------- */
 
+type CredField = { key: string; label: string; type?: "text" | "password"; placeholder?: string; optional?: boolean };
+type BrokerConn = {
+  id: string;
+  label: string;
+  fields: CredField[];
+  connected: boolean;
+  envFallback: boolean;
+};
+
 function BrokerSync() {
-  const [brokerList, setBrokerList] = useState<Broker[] | null>(null);
+  const [brokerList, setBrokerList] = useState<BrokerConn[] | null>(null);
+  const [openForm, setOpenForm] = useState<string | null>(null);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, { ok: boolean; text: string }>>({});
 
-  useEffect(() => {
-    fetch("/api/sync/status")
+  const load = () =>
+    fetch("/api/broker-connections")
       .then((r) => r.json())
       .then((b) => setBrokerList(b.brokers ?? []))
       .catch(() => setBrokerList([]));
+
+  useEffect(() => {
+    load();
   }, []);
 
+  const say = (id: string, ok: boolean, text: string) => setMessages((m) => ({ ...m, [id]: { ok, text } }));
+
+  async function connect(b: BrokerConn) {
+    setBusy(`connect-${b.id}`);
+    try {
+      const res = await fetch("/api/broker-connections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ broker: b.id, credentials: formValues }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Connection failed");
+      say(b.id, true, "Connected! Credentials verified with the broker and stored encrypted.");
+      setOpenForm(null);
+      setFormValues({});
+      await load();
+    } catch (e) {
+      say(b.id, false, e instanceof Error ? e.message : "Connection failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function disconnect(b: BrokerConn) {
+    if (!confirm(`Disconnect ${b.label}?`)) return;
+    await fetch(`/api/broker-connections?broker=${b.id}`, { method: "DELETE" }).catch(() => null);
+    say(b.id, true, "Disconnected — your credentials were deleted.");
+    await load();
+  }
+
   async function sync(id: string) {
-    setBusy(id);
-    setMessages((m) => ({ ...m, [id]: undefined as never }));
+    setBusy(`sync-${id}`);
     try {
       const res = await fetch(`/api/sync/${id}`, { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || `Sync failed (HTTP ${res.status})`);
-      setMessages((m) => ({
-        ...m,
-        [id]: {
-          ok: true,
-          text: `Imported ${body.imported}, skipped ${body.skipped} already-synced. ${body.detail ?? ""}`,
-        },
-      }));
+      say(id, true, `Imported ${body.imported}, skipped ${body.skipped} already-synced. ${body.detail ?? ""}`);
     } catch (e) {
-      setMessages((m) => ({ ...m, [id]: { ok: false, text: e instanceof Error ? e.message : "Sync failed" } }));
+      say(id, false, e instanceof Error ? e.message : "Sync failed");
     } finally {
       setBusy(null);
     }
@@ -248,43 +284,97 @@ function BrokerSync() {
   return (
     <section className="card space-y-4">
       <div>
-        <h2 className="text-base font-semibold">Broker API sync</h2>
+        <h2 className="text-base font-semibold">Broker sync</h2>
         <p className="mt-1 text-sm text-muted">
-          Pull filled orders straight from your broker. Keys live in <code className="text-ink-2">.env</code> on the
-          server — see the README for setup. New brokers plug in via the adapter interface in{" "}
-          <code className="text-ink-2">src/lib/brokers</code>.
+          Connect your broker right here — credentials are <span className="text-ink-2">verified with the broker</span>,
+          stored <span className="text-ink-2">encrypted</span>, visible to no one, and used only to pull your fills.
         </p>
       </div>
 
-      {brokerList === null && <p className="text-sm text-muted">Checking configured brokers…</p>}
-      {brokerList?.length === 0 && <p className="text-sm text-muted">No broker adapters registered.</p>}
+      {brokerList === null && <p className="text-sm text-muted">Checking brokers…</p>}
 
-      {brokerList?.map((b) => (
-        <div key={b.id} className="rounded-lg border border-edge bg-raised/40 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium">{b.label}</p>
-              <p className={`text-xs ${b.configured ? "text-profit" : "text-muted"}`}>
-                {b.configured ? "● API keys configured" : "○ API keys not set — add them to .env"}
-              </p>
+      {brokerList?.map((b) => {
+        const usable = b.connected || b.envFallback;
+        return (
+          <div key={b.id} className="rounded-xl border border-edge bg-raised/40 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">{b.label}</p>
+                <p className={`text-xs ${usable ? "text-profit" : "text-muted"}`}>
+                  {b.connected
+                    ? "● Connected with your credentials"
+                    : b.envFallback
+                      ? "● Server credentials available"
+                      : "○ Not connected"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {b.connected ? (
+                  <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => disconnect(b)}>
+                    Disconnect
+                  </button>
+                ) : (
+                  <button
+                    className="btn-ghost px-3 py-1.5 text-xs"
+                    onClick={() => {
+                      setOpenForm(openForm === b.id ? null : b.id);
+                      setFormValues({});
+                    }}
+                  >
+                    {openForm === b.id ? "Cancel" : "Connect"}
+                  </button>
+                )}
+                <button className="btn-primary" onClick={() => sync(b.id)} disabled={!usable || busy === `sync-${b.id}`}>
+                  {busy === `sync-${b.id}` ? "Syncing…" : "Sync now"}
+                </button>
+              </div>
             </div>
-            <button className="btn-primary" onClick={() => sync(b.id)} disabled={!b.configured || busy === b.id}>
-              {busy === b.id ? "Syncing…" : "Sync now"}
-            </button>
+
+            {openForm === b.id && (
+              <form
+                className="mt-3 space-y-2 border-t border-edge pt-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  connect(b);
+                }}
+              >
+                {b.fields.map((f) => (
+                  <div key={f.key}>
+                    <label className="field-label">
+                      {f.label}
+                      {!f.optional && <span className="text-loss"> *</span>}
+                    </label>
+                    <input
+                      className="field"
+                      type={f.type ?? "text"}
+                      placeholder={f.placeholder}
+                      required={!f.optional}
+                      value={formValues[f.key] ?? ""}
+                      onChange={(e) => setFormValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                      autoComplete="off"
+                    />
+                  </div>
+                ))}
+                <button className="btn-primary w-full" type="submit" disabled={busy === `connect-${b.id}`}>
+                  {busy === `connect-${b.id}` ? "Verifying with the broker…" : "Verify & connect"}
+                </button>
+              </form>
+            )}
+
+            {messages[b.id] && (
+              <p
+                className={`mt-2 rounded-lg border px-3 py-2 text-sm ${
+                  messages[b.id].ok
+                    ? "border-profit/40 bg-profit/10 text-profit"
+                    : "border-loss/40 bg-loss/10 text-loss"
+                }`}
+              >
+                {messages[b.id].text}
+              </p>
+            )}
           </div>
-          {messages[b.id] && (
-            <p
-              className={`mt-2 rounded-lg border px-3 py-2 text-sm ${
-                messages[b.id].ok
-                  ? "border-profit/40 bg-profit/10 text-profit"
-                  : "border-loss/40 bg-loss/10 text-loss"
-              }`}
-            >
-              {messages[b.id].text}
-            </p>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </section>
   );
 }

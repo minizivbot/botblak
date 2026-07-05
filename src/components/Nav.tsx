@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { Logo } from "./Logo";
 
 const icons: Record<string, React.ReactNode> = {
   dashboard: (
@@ -39,6 +40,12 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M10 2.5c1.5 2.5 4.5 4 4.5 8a4.5 4.5 0 01-9 0c0-1.8.8-3.2 1.8-4.6.5.9 1.2 1.5 1.2 1.5C8.5 5.5 9.4 4 10 2.5z" strokeLinejoin="round" />
     </svg>
   ),
+  learn: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <path d="M10 4.5C8.5 3.5 6.5 3 4 3v13c2.5 0 4.5.5 6 1.5 1.5-1 3.5-1.5 6-1.5V3c-2.5 0-4.5.5-6 1.5z" strokeLinejoin="round" />
+      <path d="M10 4.5v13" strokeLinecap="round" />
+    </svg>
+  ),
 };
 
 const links = [
@@ -46,23 +53,10 @@ const links = [
   { href: "/trades", label: "Trades", icon: "trades" },
   { href: "/journal", label: "Journal", icon: "journal" },
   { href: "/motivation", label: "Daily Motivation", icon: "motivation" },
+  { href: "/learn", label: "Learn", icon: "learn" },
   { href: "/import", label: "Import & Sync", icon: "import" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
-
-function Logo() {
-  return (
-    <span className="flex items-center gap-2.5">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-profit-mark shadow-[0_2px_10px_rgba(57,135,229,0.4)]">
-        <svg viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="2" className="h-4 w-4">
-          <path d="M3 13l4-5 3.5 3L17 4" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M13 4h4v4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </span>
-      <span className="text-base font-bold tracking-tight">TradeZone</span>
-    </span>
-  );
-}
 
 export function Nav() {
   const pathname = usePathname();

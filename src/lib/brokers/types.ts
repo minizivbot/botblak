@@ -22,22 +22,37 @@ export type SyncResult = {
   detail?: string;
 };
 
+/** Per-user credentials entered on the site (stored encrypted server-side). */
+export type BrokerCredentials = Record<string, string>;
+
+export type CredentialField = {
+  key: string;
+  label: string;
+  type?: "text" | "password";
+  placeholder?: string;
+  optional?: boolean;
+};
+
 /**
  * Adapter interface for broker API connections. To add a broker:
  *   1. Implement this interface in src/lib/brokers/<broker>.ts
  *   2. Register it in src/lib/brokers/index.ts
- * Adapters run on the server only — API keys come from process.env and are
- * never sent to the client.
+ * Credentials come from the signed-in user's saved connection (encrypted in
+ * the DB) and fall back to server-wide .env values. They never reach the client.
  */
 export interface BrokerAdapter {
   /** Machine name, used in API routes ("alpaca"). */
   id: string;
   /** Display name for the UI. */
   label: string;
-  /** True when the required environment variables are present. */
-  isConfigured(): boolean;
-  /** Fetch trades since the given date (or all available history). */
-  fetchTrades(since?: Date): Promise<SyncResult>;
+  /** Fields the user fills in on the Import & Sync page. */
+  credentialFields: CredentialField[];
+  /** True when env-level credentials are present (server fallback). */
+  envConfigured(): boolean;
+  /** Throw BrokerError if the credentials are rejected; used on connect. */
+  verify(creds: BrokerCredentials): Promise<void>;
+  /** Fetch trades using the given credentials (or env fallback when null). */
+  fetchTrades(creds: BrokerCredentials | null): Promise<SyncResult>;
 }
 
 export class BrokerError extends Error {

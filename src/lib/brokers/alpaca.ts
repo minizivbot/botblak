@@ -1,4 +1,4 @@
-import { BrokerAdapter, BrokerError, SyncResult } from "./types";
+import { BrokerAdapter, BrokerCredentials, BrokerError, SyncResult } from "./types";
 import { pairFillsFifo, type Fill } from "./fifo";
 
 type AlpacaOrder = {
@@ -11,37 +11,73 @@ type AlpacaOrder = {
   status: string;
 };
 
+type Resolved = { keyId: string; secretKey: string; baseUrl: string };
+
+function resolve(creds: BrokerCredentials | null): Resolved | null {
+  if (creds?.keyId && creds?.secretKey) {
+    return {
+      keyId: creds.keyId,
+      secretKey: creds.secretKey,
+      baseUrl: creds.baseUrl?.trim() || "https://paper-api.alpaca.markets",
+    };
+  }
+  if (process.env.ALPACA_API_KEY_ID && process.env.ALPACA_API_SECRET_KEY) {
+    return {
+      keyId: process.env.ALPACA_API_KEY_ID,
+      secretKey: process.env.ALPACA_API_SECRET_KEY,
+      baseUrl: process.env.ALPACA_BASE_URL || "https://paper-api.alpaca.markets",
+    };
+  }
+  return null;
+}
+
+function headers(r: Resolved) {
+  return { "APCA-API-KEY-ID": r.keyId, "APCA-API-SECRET-KEY": r.secretKey };
+}
+
 /**
- * Alpaca adapter (paper trading by default).
- *
- * Fetches closed, filled orders from the Alpaca Trading API and pairs them
- * FIFO per symbol into round-trip trades.
+ * Alpaca adapter (paper trading by default). Pulls closed, filled orders and
+ * pairs them FIFO per symbol into round-trip trades.
  */
 export const alpacaAdapter: BrokerAdapter = {
   id: "alpaca",
-  label: "Alpaca (paper)",
+  label: "Alpaca (stocks, paper)",
+  credentialFields: [
+    { key: "keyId", label: "API Key ID", placeholder: "PK…" },
+    { key: "secretKey", label: "API Secret Key", type: "password" },
+    { key: "baseUrl", label: "API URL", placeholder: "https://paper-api.alpaca.markets", optional: true },
+  ],
 
-  isConfigured() {
+  envConfigured() {
     return Boolean(process.env.ALPACA_API_KEY_ID && process.env.ALPACA_API_SECRET_KEY);
   },
 
-  async fetchTrades(since?: Date): Promise<SyncResult> {
-    if (!this.isConfigured()) {
-      throw new BrokerError(
-        "Alpaca keys are not configured. Set ALPACA_API_KEY_ID and ALPACA_API_SECRET_KEY in .env (see README).",
-      );
+  async verify(creds: BrokerCredentials): Promise<void> {
+    const r = resolve(creds);
+    if (!r) throw new BrokerError("API Key ID and Secret Key are required.");
+    let res: Response;
+    try {
+      res = await fetch(`${r.baseUrl}/v2/account`, { headers: headers(r), signal: AbortSignal.timeout(12000) });
+    } catch (e) {
+      throw new BrokerError(`Could not reach Alpaca: ${e instanceof Error ? e.message : String(e)}`);
     }
-    const baseUrl = process.env.ALPACA_BASE_URL || "https://paper-api.alpaca.markets";
-    const headers = {
-      "APCA-API-KEY-ID": process.env.ALPACA_API_KEY_ID!,
-      "APCA-API-SECRET-KEY": process.env.ALPACA_API_SECRET_KEY!,
-    };
+    if (res.status === 401 || res.status === 403) {
+      throw new BrokerError("Alpaca rejected these keys. Check the Key ID and Secret.", res.status);
+    }
+    if (!res.ok) throw new BrokerError(`Alpaca error ${res.status} while verifying the keys.`, res.status);
+  },
+
+  async fetchTrades(creds: BrokerCredentials | null): Promise<SyncResult> {
+    const r = resolve(creds);
+    if (!r) {
+      throw new BrokerError("Alpaca is not connected. Add your API keys on the Import & Sync page.");
+    }
 
     // Page through closed orders, oldest first.
     const orders: AlpacaOrder[] = [];
-    let after = since ? since.toISOString() : "2015-01-01T00:00:00Z";
+    let after = "2015-01-01T00:00:00Z";
     for (let page = 0; page < 20; page++) {
-      const url = new URL("/v2/orders", baseUrl);
+      const url = new URL("/v2/orders", r.baseUrl);
       url.searchParams.set("status", "closed");
       url.searchParams.set("direction", "asc");
       url.searchParams.set("limit", "500");
@@ -49,14 +85,14 @@ export const alpacaAdapter: BrokerAdapter = {
 
       let res: Response;
       try {
-        res = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
+        res = await fetch(url, { headers: headers(r), signal: AbortSignal.timeout(15000) });
       } catch (e) {
         throw new BrokerError(
-          `Could not reach Alpaca at ${baseUrl}: ${e instanceof Error ? e.message : String(e)}`,
+          `Could not reach Alpaca at ${r.baseUrl}: ${e instanceof Error ? e.message : String(e)}`,
         );
       }
       if (res.status === 401 || res.status === 403) {
-        throw new BrokerError("Alpaca rejected the API keys (401/403). Check your .env values.", res.status);
+        throw new BrokerError("Alpaca rejected the API keys (401/403). Re-connect with valid keys.", res.status);
       }
       if (!res.ok) {
         const body = await res.text().catch(() => "");

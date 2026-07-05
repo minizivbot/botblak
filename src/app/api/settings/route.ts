@@ -12,11 +12,16 @@ export async function GET() {
     const settings =
       (await prisma.settings.findUnique({ where: { userId } })) ??
       (await prisma.settings.create({ data: { userId } }));
-    // Broker key status only — the keys themselves never leave the server.
+    // Broker connection status only — credentials never leave the server.
+    const connections = await prisma.brokerConnection.findMany({
+      where: { userId },
+      select: { broker: true },
+    });
+    const connected = new Set(connections.map((c) => c.broker));
     const brokerStatus = Object.values(brokers).map((b) => ({
       id: b.id,
       label: b.label,
-      configured: b.isConfigured(),
+      configured: connected.has(b.id) || b.envConfigured(),
     }));
     return NextResponse.json({ settings, brokers: brokerStatus });
   } catch (e) {
