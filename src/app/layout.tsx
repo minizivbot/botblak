@@ -2,9 +2,28 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://mytradezone.vercel.app";
+
 export const metadata: Metadata = {
-  title: { default: "TradeZone", template: "%s — TradeZone" },
-  description: "Log trades, sync brokers, and review your performance.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "TradeZone — Trading Journal", template: "%s — TradeZone" },
+  description:
+    "Log trades, sync your broker, and see exactly where your edge is. ICT killzones, smart insights, and a daily-loss risk guard.",
+  applicationName: "TradeZone",
+  keywords: ["trading journal", "ICT", "killzones", "futures", "day trading", "prop firm"],
+  openGraph: {
+    title: "TradeZone — Trading Journal",
+    description:
+      "Log trades, sync your broker, and see exactly where your edge is. ICT killzones, smart insights, and a daily-loss risk guard.",
+    url: SITE_URL,
+    siteName: "TradeZone",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TradeZone — Trading Journal",
+    description: "Log trades, sync your broker, and see exactly where your edge is.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
