@@ -6,6 +6,8 @@ import { ensureDefaultAccount } from "@/lib/accounts";
 import { computeStats, type StatsTrade } from "@/lib/stats";
 import { propStatus } from "@/lib/prop";
 import { fmtMoney, fmtSignedMoney, fmtPct } from "@/lib/format";
+import { AccountsManager } from "@/components/AccountsManager";
+import { DemoBanner } from "@/components/DemoBanner";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Accounts" };
@@ -37,6 +39,7 @@ export default async function AccountsPage() {
 
   return (
     <div className="space-y-4">
+      {isDemo && <DemoBanner />}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Accounts</h1>
@@ -98,10 +101,14 @@ export default async function AccountsPage() {
         ))}
       </div>
 
-      <p className="text-sm text-muted">
-        Add, rename, mark as copy, or set prop-firm rules in{" "}
-        <Link href="/settings" className="text-accent hover:underline">Settings</Link>.
-      </p>
+      {isDemo ? (
+        <p className="text-sm text-muted">
+          <Link href="/register" className="text-accent hover:underline">Create a free account</Link> to add and manage
+          your own trading accounts.
+        </p>
+      ) : (
+        <AccountsManager />
+      )}
     </div>
   );
 }
