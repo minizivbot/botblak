@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireUserId } from "@/lib/auth";
+import { getViewer } from "@/lib/viewer";
 import { ensureDefaultAccount } from "@/lib/accounts";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
+import { DemoBanner } from "@/components/DemoBanner";
 import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
 import { parseConcepts } from "@/lib/concepts";
 import { toTradeDTO } from "@/lib/dto";
@@ -17,9 +18,9 @@ export default async function TradesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const userId = await requireUserId();
+  const { userId, isDemo } = await getViewer();
   if (!userId) redirect("/login");
-  await ensureDefaultAccount(userId);
+  if (!isDemo) await ensureDefaultAccount(userId);
 
   const filters = parseFilters(await searchParams);
   const accounts = await prisma.account.findMany({
@@ -44,6 +45,7 @@ export default async function TradesPage({
 
   return (
     <div className="space-y-4">
+      {isDemo && <DemoBanner />}
       <h1 className="text-xl font-semibold">Trades</h1>
       <AccountSwitcher accounts={accounts} />
       <FilterBar
@@ -55,6 +57,7 @@ export default async function TradesPage({
         currency={settings?.currency ?? "USD"}
         accounts={accounts}
         userConcepts={parseConcepts(user?.concepts)}
+        readOnly={isDemo}
       />
     </div>
   );

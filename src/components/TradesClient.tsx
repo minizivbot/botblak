@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import type { TradeDTO } from "@/lib/dto";
 import { tradePnl } from "@/lib/pnl";
 import { killzone } from "@/lib/killzones";
@@ -15,11 +16,13 @@ export function TradesClient({
   currency,
   accounts,
   userConcepts,
+  readOnly = false,
 }: {
   trades: TradeDTO[];
   currency: string;
   accounts: AccountOption[];
   userConcepts: string[];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const search = useSearchParams().toString();
@@ -50,16 +53,20 @@ export function TradesClient({
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-muted">{trades.length} trades</p>
         <div className="flex gap-2">
-          <a
-            className="btn-ghost"
-            href={`/api/export/csv${search ? `?${search}` : ""}`}
-            download
-          >
-            Export CSV
-          </a>
-          <button className="btn-primary" onClick={() => setModal({ open: true, trade: null })}>
-            + Add trade
-          </button>
+          {readOnly ? (
+            <Link className="btn-primary" href="/login">
+              Sign in to add trades
+            </Link>
+          ) : (
+            <>
+              <a className="btn-ghost" href={`/api/export/csv${search ? `?${search}` : ""}`} download>
+                Export CSV
+              </a>
+              <button className="btn-primary" onClick={() => setModal({ open: true, trade: null })}>
+                + Add trade
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -149,16 +156,22 @@ export function TradesClient({
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                    <button className="text-xs text-accent hover:underline" onClick={() => setModal({ open: true, trade: t })}>
-                      Edit
-                    </button>
-                    <button
-                      className="ml-3 text-xs text-loss hover:underline disabled:opacity-50"
-                      disabled={deleting === t.id}
-                      onClick={() => remove(t)}
-                    >
-                      {deleting === t.id ? "…" : "Delete"}
-                    </button>
+                    {readOnly ? (
+                      <span className="text-xs text-muted">—</span>
+                    ) : (
+                      <>
+                        <button className="text-xs text-accent hover:underline" onClick={() => setModal({ open: true, trade: t })}>
+                          Edit
+                        </button>
+                        <button
+                          className="ml-3 text-xs text-loss hover:underline disabled:opacity-50"
+                          disabled={deleting === t.id}
+                          onClick={() => remove(t)}
+                        >
+                          {deleting === t.id ? "…" : "Delete"}
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               );

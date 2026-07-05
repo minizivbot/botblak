@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireUserId } from "@/lib/auth";
+import { getViewer } from "@/lib/viewer";
 import { ensureDefaultAccount } from "@/lib/accounts";
+import { DemoBanner } from "@/components/DemoBanner";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { CountUp } from "@/components/CountUp";
 import { RiskGuard } from "@/components/RiskGuard";
@@ -38,9 +39,10 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const userId = await requireUserId();
+  const { userId, isDemo } = await getViewer();
+  // No session and no demo user seeded — send to login as a last resort.
   if (!userId) redirect("/login");
-  await ensureDefaultAccount(userId);
+  if (!isDemo) await ensureDefaultAccount(userId);
 
   const filters = parseFilters(await searchParams);
   const accounts = await prisma.account.findMany({
@@ -94,6 +96,8 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-4">
+      {isDemo && <DemoBanner />}
+
       {/* Hero */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>

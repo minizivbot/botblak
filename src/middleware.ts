@@ -3,6 +3,10 @@ import { AUTH_COOKIE, verifySessionValue } from "@/lib/session";
 
 const PUBLIC_PATHS = ["/login", "/register"];
 
+// Pages a logged-out visitor may browse as a live demo (read-only). Everything
+// else (journal, import, settings, all mutating APIs) still requires sign-in.
+const GUEST_PAGES = ["/", "/trades", "/learn", "/motivation", "/opengraph-image"];
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/api/auth/")) {
@@ -11,6 +15,9 @@ export async function middleware(req: NextRequest) {
 
   const userId = await verifySessionValue(req.cookies.get(AUTH_COOKIE)?.value);
   if (userId) return NextResponse.next();
+
+  // Guests get the public showcase pages; the pages themselves render demo data.
+  if (GUEST_PAGES.includes(pathname)) return NextResponse.next();
 
   if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });

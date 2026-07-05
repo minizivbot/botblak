@@ -58,7 +58,7 @@ const links = [
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
-export function Nav() {
+export function Nav({ username, authed }: { username: string | null; authed: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -70,6 +70,42 @@ export function Nav() {
   }
 
   if (pathname === "/login" || pathname === "/register") return null;
+
+  const initial = (username?.[0] ?? "?").toUpperCase();
+
+  const accountBox = authed ? (
+    <div className="rounded-xl border border-edge bg-raised/50 p-3">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-profit-mark text-sm font-bold text-white">
+          {initial}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-ink">{username}</p>
+          <button onClick={signOut} className="text-xs text-muted transition-colors hover:text-loss">
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div className="space-y-2 rounded-xl border border-accent/30 bg-accent/5 p-3">
+      <p className="text-xs text-ink-2">You&apos;re viewing a live demo.</p>
+      <Link
+        href="/login"
+        onClick={() => setOpen(false)}
+        className="btn-primary block w-full text-center text-sm"
+      >
+        Sign in
+      </Link>
+      <Link
+        href="/register"
+        onClick={() => setOpen(false)}
+        className="block w-full text-center text-xs text-accent hover:underline"
+      >
+        Create free account
+      </Link>
+    </div>
+  );
 
   const items = links.map((l) => {
     const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
@@ -104,19 +140,17 @@ export function Nav() {
         </button>
       </header>
       {open && (
-        <nav className="space-y-1 border-b border-edge bg-surface p-3 md:hidden">{items}</nav>
+        <nav className="space-y-1 border-b border-edge bg-surface p-3 md:hidden">
+          {items}
+          <div className="pt-2">{accountBox}</div>
+        </nav>
       )}
 
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-edge bg-surface/60 p-4 backdrop-blur md:flex">
         <Link href="/" className="mb-8 px-2 pt-1"><Logo /></Link>
         <nav className="space-y-1">{items}</nav>
-        <div className="mt-auto space-y-2 px-3">
-          <button onClick={signOut} className="text-xs text-muted transition-colors hover:text-ink-2">
-            Sign out
-          </button>
-          <p className="text-xs text-muted">Private by default</p>
-        </div>
+        <div className="mt-auto">{accountBox}</div>
       </aside>
     </>
   );

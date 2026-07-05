@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { getViewer } from "@/lib/viewer";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://mytradezone.vercel.app";
 
@@ -26,12 +27,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const viewer = await getViewer();
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
         <div className="flex min-h-screen flex-col md:flex-row">
-          <Nav />
+          <Nav username={viewer.username} authed={!viewer.isDemo} />
           <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">{children}</div>
           </main>
