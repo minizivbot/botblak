@@ -223,6 +223,48 @@ export function SettingsClient() {
         ))}
         {loaded && brokers.length === 0 && <p className="text-sm text-muted">No broker adapters registered.</p>}
       </section>
+
+      <DangerZone />
     </div>
+  );
+}
+
+function DangerZone() {
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function deleteAccount() {
+    if (!confirm("Delete your account and ALL your data permanently? This cannot be undone.")) return;
+    if (!confirm("Are you absolutely sure? Every trade, journal entry, and account will be erased.")) return;
+    setDeleting(true);
+    setError(null);
+    const res = await fetch("/api/profile", { method: "DELETE" });
+    if (res.ok) {
+      router.push("/register");
+      router.refresh();
+    } else {
+      const b = await res.json().catch(() => ({}));
+      setError(b.error || "Failed to delete account");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <section className="card max-w-lg space-y-3 !border-loss/30">
+      <h2 className="text-base font-semibold text-loss">Danger zone</h2>
+      <p className="text-sm text-muted">
+        Permanently delete your account and everything in it — trades, journal, accounts, broker connections. This
+        can&apos;t be undone.
+      </p>
+      {error && <p className="rounded-lg border border-loss/40 bg-loss/10 px-3 py-2 text-sm text-loss">{error}</p>}
+      <button
+        onClick={deleteAccount}
+        disabled={deleting}
+        className="rounded-lg border border-loss/50 px-4 py-2 text-sm font-semibold text-loss transition-colors hover:bg-loss/10 disabled:opacity-50"
+      >
+        {deleting ? "Deleting…" : "Delete my account"}
+      </button>
+    </section>
   );
 }

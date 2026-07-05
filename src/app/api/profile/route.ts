@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUserId } from "@/lib/auth";
+import { requireUserId, AUTH_COOKIE } from "@/lib/auth";
 import { usernameSchema, zodMessage } from "@/lib/validation";
 
 export async function GET() {
@@ -44,5 +44,26 @@ export async function PUT(req: NextRequest) {
   } catch (e) {
     console.error("PUT /api/profile failed:", e);
     return NextResponse.json({ error: "Failed to update username" }, { status: 500 });
+  }
+}
+
+/** Self-serve account deletion — removes the user and all their data (cascade). */
+export async function DELETE() {
+  try {
+    const userId = await requireUserId();
+    if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+    if (user?.username === "demo") {
+      return NextResponse.json({ error: "The demo account can't be deleted" }, { status: 400 });
+    }
+
+    await prisma.user.delete({ where: { id: userId } });
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(AUTH_COOKIE, "", { path: "/", maxAge: 0 });
+    return res;
+  } catch (e) {
+    console.error("DELETE /api/profile failed:", e);
+    return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
   }
 }

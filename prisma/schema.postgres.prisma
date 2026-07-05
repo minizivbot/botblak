@@ -25,6 +25,7 @@ model User {
   settings     Settings?
   accounts     Account[]
   brokerConnections BrokerConnection[]
+  uploads           Upload[]
 }
 
 model BrokerConnection {
@@ -118,4 +119,13 @@ model SiteConfig {
   registrationOpen   Boolean @default(true) // allow new sign-ups
   leaderboardEnabled Boolean @default(true) // show the public leaderboard
   updatedAt          DateTime @updatedAt
+}
+
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mimeType  String
+  data      String // base64-encoded image bytes (kept in DB so it persists on serverless)
+  createdAt DateTime @default(now())
 }

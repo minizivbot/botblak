@@ -42,10 +42,19 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { userId, isDemo } = await getViewer();
+  const { userId, isDemo, username } = await getViewer();
   // No session and no demo user seeded — send to login as a last resort.
   if (!userId) redirect("/login");
   if (!isDemo) await ensureDefaultAccount(userId);
+
+  // Brand-new signed-in user with no trades yet → onboarding instead of empty charts.
+  if (!isDemo) {
+    const anyTrades = await prisma.trade.count({ where: { userId } });
+    if (anyTrades === 0) {
+      const { Onboarding } = await import("@/components/Onboarding");
+      return <Onboarding username={username} />;
+    }
+  }
 
   const filters = parseFilters(await searchParams);
   const accountsFull = await prisma.account.findMany({
