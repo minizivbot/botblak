@@ -127,6 +127,7 @@ function AccountsManager() {
 export function SettingsClient() {
   const [startingBalance, setStartingBalance] = useState("");
   const [currency, setCurrency] = useState("USD");
+  const [maxDailyLoss, setMaxDailyLoss] = useState("");
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -138,6 +139,7 @@ export function SettingsClient() {
       .then((b) => {
         setStartingBalance(String(b.settings?.startingBalance ?? 10000));
         setCurrency(b.settings?.currency ?? "USD");
+        setMaxDailyLoss(b.settings?.maxDailyLoss != null ? String(b.settings.maxDailyLoss) : "");
         setBrokers(b.brokers ?? []);
         setLoaded(true);
       })
@@ -155,7 +157,11 @@ export function SettingsClient() {
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ startingBalance: Number(startingBalance), currency }),
+        body: JSON.stringify({
+          startingBalance: Number(startingBalance),
+          currency,
+          maxDailyLoss: maxDailyLoss.trim() === "" ? null : Number(maxDailyLoss),
+        }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "Failed to save settings");
@@ -193,6 +199,23 @@ export function SettingsClient() {
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className="field-label" htmlFor="s-maxloss">Daily loss limit (risk guard)</label>
+          <input
+            id="s-maxloss"
+            className="field"
+            type="number"
+            step="any"
+            min="0"
+            placeholder="e.g. 500 — leave empty to disable"
+            value={maxDailyLoss}
+            onChange={(e) => setMaxDailyLoss(e.target.value)}
+            disabled={!loaded}
+          />
+          <p className="mt-1 text-xs text-muted">
+            When today&apos;s losses reach this amount, the dashboard shows a big STOP banner. Your future self says thanks.
+          </p>
         </div>
         {message && (
           <p

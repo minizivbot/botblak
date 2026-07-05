@@ -232,7 +232,8 @@ const BROKER_GUIDES: Record<string, { intro: string; steps: string[] }> = {
       "Type \"demo\" for a demo/sim account or \"live\" for a funded live account.",
       "Press Verify & connect — we sign in to Tradovate once to confirm the details are right.",
       "Press \"Sync now\" — your fills are pulled, paired into trades, and priced with real futures point values (ES $50/pt, MES $5/pt…).",
-      "Prop accounts that log in through Tradovate (Apex, TakeProfit, etc.) work with those same credentials.",
+      "Prop accounts that log in through Tradovate (Apex, TakeProfit, etc.) usually need env = \"live\" with those same credentials.",
+      "If Tradovate answers \"API access required\", generate an API key in Tradovate → Settings → API Access and fill the two optional API fields.",
     ],
   },
 };

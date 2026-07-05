@@ -95,4 +95,5 @@ model Settings {
   user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   startingBalance Float  @default(10000)
   currency        String @default("USD")
+  maxDailyLoss    Float? // risk guard: stop-trading alert when today's losses reach this
 }

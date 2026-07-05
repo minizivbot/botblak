@@ -5,6 +5,7 @@ import { requireUserId } from "@/lib/auth";
 import { ensureDefaultAccount } from "@/lib/accounts";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { CountUp } from "@/components/CountUp";
+import { RiskGuard } from "@/components/RiskGuard";
 import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
 import {
   computeStats,
@@ -76,6 +77,15 @@ export default async function DashboardPage({
   const recent = closedTrades(trades).slice(-6).reverse();
   const open = trades.filter((t) => t.exitPrice == null);
 
+  // Risk guard runs on ALL of today's closed trades, ignoring the view filters —
+  // a loss limit is account-wide, not per-filter.
+  const startOfToday = new Date();
+  startOfToday.setUTCHours(0, 0, 0, 0);
+  const todayTrades = closedTrades(
+    await prisma.trade.findMany({ where: { userId, exitDate: { gte: startOfToday } } }),
+  );
+  const todayPnl = todayTrades.reduce((s, t) => s + t.pnl, 0);
+
   const tone = (v: number | null | undefined) =>
     v == null || v === 0 ? ("neutral" as const) : v > 0 ? ("positive" as const) : ("negative" as const);
 
@@ -107,6 +117,13 @@ export default async function DashboardPage({
           {stats.closedCount} closed · {stats.openCount} open · {stats.tradeCount} total in view
         </p>
       </div>
+
+      <RiskGuard
+        todayPnl={todayPnl}
+        todayCount={todayTrades.length}
+        maxDailyLoss={settings?.maxDailyLoss ?? null}
+        currency={currency}
+      />
 
       <AccountSwitcher accounts={accounts} />
 

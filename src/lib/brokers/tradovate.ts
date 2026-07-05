@@ -54,6 +54,8 @@ export const tradovateAdapter: BrokerAdapter = {
     { key: "username", label: "Username" },
     { key: "password", label: "Password", type: "password" },
     { key: "env", label: "Environment (demo / live)", placeholder: "demo", optional: true },
+    { key: "cid", label: "API Client ID (only if Tradovate asks for it)", optional: true },
+    { key: "sec", label: "API Client Secret", type: "password", optional: true },
   ],
 
   envConfigured() {
@@ -71,7 +73,7 @@ export const tradovateAdapter: BrokerAdapter = {
     if (!r) {
       throw new BrokerError("Tradovate is not connected. Add your username and password on the Import & Sync page.");
     }
-    const baseUrl = `https://${r.env}.tradovate.com/v1`;
+    const baseUrl = `https://${r.env}.tradovateapi.com/v1`;
     const token = await authenticate(r);
     const get = <T>(path: string) => apiGet<T>(baseUrl, token, path);
 
@@ -127,7 +129,7 @@ export const tradovateAdapter: BrokerAdapter = {
 };
 
 async function authenticate(r: Resolved): Promise<string> {
-  const baseUrl = `https://${r.env}.tradovate.com/v1`;
+  const baseUrl = `https://${r.env}.tradovateapi.com/v1`;
   const body = {
     name: r.username,
     password: r.password,

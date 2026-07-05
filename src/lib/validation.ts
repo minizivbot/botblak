@@ -45,6 +45,10 @@ export const settingsSchema = z.object({
     .trim()
     .length(3, "Use a 3-letter currency code (e.g. USD)")
     .transform((s) => s.toUpperCase()),
+  maxDailyLoss: z
+    .union([z.coerce.number().positive("Daily loss limit must be positive"), z.literal(""), z.null()])
+    .optional()
+    .transform((v) => (typeof v === "number" ? v : null)),
 });
 
 export const importTradesSchema = z.object({
