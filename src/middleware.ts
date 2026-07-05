@@ -16,8 +16,8 @@ export async function middleware(req: NextRequest) {
   const userId = await verifySessionValue(req.cookies.get(AUTH_COOKIE)?.value);
   if (userId) return NextResponse.next();
 
-  // Guests get the public showcase pages; the pages themselves render demo data.
-  if (GUEST_PAGES.includes(pathname)) return NextResponse.next();
+  // Guests get the public showcase pages (and any trader profile under /u/).
+  if (GUEST_PAGES.includes(pathname) || pathname.startsWith("/u/")) return NextResponse.next();
 
   if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });

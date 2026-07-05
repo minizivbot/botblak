@@ -257,7 +257,7 @@ export default async function DashboardPage({
           value={
             stats.currentStreak === 0
               ? "—"
-              : `${Math.abs(stats.currentStreak)} ${stats.currentStreak > 0 ? "win" : "loss"}${Math.abs(stats.currentStreak) > 1 ? "s" : ""}`
+              : `${Math.abs(stats.currentStreak)} ${stats.currentStreak > 0 ? (Math.abs(stats.currentStreak) > 1 ? "wins" : "win") : Math.abs(stats.currentStreak) > 1 ? "losses" : "loss"}`
           }
           sub={`best ${stats.maxWinStreak} wins · worst ${stats.maxLossStreak} losses`}
           tone={tone(stats.currentStreak)}

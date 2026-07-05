@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getViewer } from "@/lib/viewer";
 import { computeStats, type StatsTrade } from "@/lib/stats";
@@ -69,9 +70,10 @@ export default async function LeaderboardPage() {
       {rows.length >= 1 && (
         <div className="grid gap-3 sm:grid-cols-3">
           {rows.slice(0, 3).map((r, i) => (
-            <div
+            <Link
+              href={`/u/${encodeURIComponent(r.username)}`}
               key={r.username}
-              className={`card flex flex-col items-center text-center ${
+              className={`card flex flex-col items-center text-center transition-transform hover:-translate-y-0.5 ${
                 i === 0 ? "!border-yellow-500/40 bg-yellow-500/5" : ""
               } ${r.isYou ? "ring-1 ring-accent/50" : ""}`}
             >
@@ -96,7 +98,7 @@ export default async function LeaderboardPage() {
               <p className="text-xs text-muted">
                 {r.winRate != null ? `${fmtPct(r.winRate)} win` : "—"} · {r.trades} trades
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       )}
@@ -119,7 +121,9 @@ export default async function LeaderboardPage() {
                 <tr key={r.username} className={`border-b border-edge/50 last:border-0 ${r.isYou ? "bg-accent/5" : ""}`}>
                   <td className="px-4 py-2.5 text-muted">{i + 4}</td>
                   <td className="px-4 py-2.5 font-medium">
-                    {r.username}
+                    <Link href={`/u/${encodeURIComponent(r.username)}`} className="hover:text-accent hover:underline">
+                      {r.username}
+                    </Link>
                     {r.isYou && <span className="ml-1 text-xs text-accent">you</span>}
                     {r.verified && <span className="ml-2 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold text-accent">✓</span>}
                     {r.funded && <span className="ml-1.5 rounded-full bg-profit/15 px-1.5 py-0.5 text-[10px] font-bold text-profit">FUNDED</span>}
