@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { TradeDTO } from "@/lib/dto";
 import { ICT_SETUPS } from "@/lib/killzones";
+import { INSTRUMENTS, findInstrument } from "@/lib/instruments";
+import { fmtSignedMoney } from "@/lib/format";
 
 type AccountOption = { id: string; name: string; isCopy: boolean };
 
@@ -10,6 +12,7 @@ type Props = {
   trade: TradeDTO | null; // null = create
   accounts: AccountOption[];
   userConcepts: string[];
+  currency: string;
   onClose: () => void;
   onSaved: () => void;
 };
@@ -23,13 +26,22 @@ function nowInput(): string {
   return new Date().toISOString().slice(0, 16);
 }
 
-export function TradeFormModal({ trade, accounts, userConcepts, onClose, onSaved }: Props) {
+export function TradeFormModal({ trade, accounts, userConcepts, currency, onClose, onSaved }: Props) {
+  // Existing trades store size = contracts × $/pt; derive contracts back out
+  // using the symbol's point value so editing shows a plain contract count.
+  const initialContracts = (() => {
+    if (!trade) return "";
+    const ppt = findInstrument(trade.symbol)?.dollarsPerPoint ?? 1;
+    const c = trade.size / ppt;
+    return Number.isInteger(c) ? String(c) : String(trade.size); // fall back to raw size for odd data
+  })();
+
   const [form, setForm] = useState({
     symbol: trade?.symbol ?? "",
     direction: trade?.direction ?? "LONG",
     entryPrice: trade?.entryPrice?.toString() ?? "",
     exitPrice: trade?.exitPrice?.toString() ?? "",
-    size: trade?.size?.toString() ?? "",
+    contracts: initialContracts,
     fees: trade?.fees?.toString() ?? "0",
     // New trades start stamped with the current date-time automatically.
     entryDate: trade ? toLocalInput(trade.entryDate) : nowInput(),
@@ -50,6 +62,20 @@ export function TradeFormModal({ trade, accounts, userConcepts, onClose, onSaved
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  // Live sizing: know the symbol's $/point, turn contracts into dollar size,
+  // and preview the resulting P&L so the MES-vs-ES difference is obvious.
+  const instrument = findInstrument(form.symbol);
+  const dollarsPerPoint = instrument?.dollarsPerPoint ?? 1;
+  const contractsNum = Number(form.contracts) || 0;
+  const computedSize = contractsNum * dollarsPerPoint;
+  const previewPnl = (() => {
+    const entry = Number(form.entryPrice);
+    const exit = Number(form.exitPrice);
+    if (!form.exitPrice.trim() || !entry || !exit || !computedSize) return null;
+    const perUnit = form.direction === "SHORT" ? entry - exit : exit - entry;
+    return perUnit * computedSize - (Number(form.fees) || 0);
+  })();
 
   const toggleConcept = (c: string) =>
     setConcepts((list) => (list.includes(c) ? list.filter((x) => x !== c) : [...list, c]));
@@ -83,7 +109,7 @@ export function TradeFormModal({ trade, accounts, userConcepts, onClose, onSaved
 
     if (!form.symbol.trim()) return setError("Symbol is required.");
     if (!form.entryPrice || Number(form.entryPrice) <= 0) return setError("Entry price must be a positive number.");
-    if (!form.size || Number(form.size) <= 0) return setError("Size must be a positive number.");
+    if (!form.contracts || contractsNum <= 0) return setError("Contracts must be a positive number.");
     if (!form.entryDate) return setError("Entry date is required.");
     const hasExitPrice = form.exitPrice.trim() !== "";
     const hasExitDate = form.exitDate.trim() !== "";
@@ -106,7 +132,7 @@ export function TradeFormModal({ trade, accounts, userConcepts, onClose, onSaved
         direction: form.direction,
         entryPrice: Number(form.entryPrice),
         exitPrice: hasExitPrice ? Number(form.exitPrice) : null,
-        size: Number(form.size),
+        size: computedSize,
         fees: Number(form.fees || 0),
         entryDate: new Date(form.entryDate + ":00Z").toISOString(),
         exitDate: hasExitDate ? new Date(form.exitDate + ":00Z").toISOString() : null,
@@ -157,7 +183,12 @@ export function TradeFormModal({ trade, accounts, userConcepts, onClose, onSaved
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="field-label">Symbol *</label>
-              <input className="field uppercase" value={form.symbol} onChange={set("symbol")} placeholder="MES, NQ, CL…" required />
+              <input className="field uppercase" value={form.symbol} onChange={set("symbol")} placeholder="MES, NQ, CL…" list="symbol-suggestions" required />
+              <datalist id="symbol-suggestions">
+                {INSTRUMENTS.map((i) => (
+                  <option key={i.symbol} value={i.symbol}>{i.name}</option>
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="field-label">Direction *</label>
@@ -175,9 +206,15 @@ export function TradeFormModal({ trade, accounts, userConcepts, onClose, onSaved
               <input className="field" type="number" step="any" min="0" value={form.exitPrice} onChange={set("exitPrice")} placeholder="leave empty if open" />
             </div>
             <div>
-              <label className="field-label">Size *</label>
-              <input className="field" type="number" step="any" min="0" value={form.size} onChange={set("size")} required />
-              <p className="mt-1 text-xs text-muted">Futures: contracts × $/pt (2 MES = 10)</p>
+              <label className="field-label">Contracts *</label>
+              <input className="field" type="number" step="any" min="0" value={form.contracts} onChange={set("contracts")} placeholder="e.g. 2" required />
+              <p className="mt-1 text-xs text-muted">
+                {instrument
+                  ? `${instrument.name} · $${instrument.dollarsPerPoint}/pt`
+                  : form.symbol.trim()
+                    ? "Unknown symbol — $1 per point (enter dollar size)"
+                    : "Number of contracts / shares"}
+              </p>
             </div>
             <div>
               <label className="field-label">Fees</label>
@@ -192,6 +229,21 @@ export function TradeFormModal({ trade, accounts, userConcepts, onClose, onSaved
               <input className="field" type="datetime-local" value={form.exitDate} onChange={set("exitDate")} />
             </div>
           </div>
+
+          {contractsNum > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-edge bg-raised/40 px-3 py-2 text-sm">
+              <span className="text-muted">
+                {contractsNum} {instrument ? instrument.symbol : form.symbol.toUpperCase() || "contracts"} × ${dollarsPerPoint}/pt
+                {" = "}
+                <span className="text-ink-2">${computedSize.toLocaleString()} / point</span>
+              </span>
+              {previewPnl != null && (
+                <span className={`font-semibold ${previewPnl >= 0 ? "text-profit" : "text-loss"}`}>
+                  P&L {fmtSignedMoney(previewPnl, currency)}
+                </span>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="field-label">Strategy tag</label>

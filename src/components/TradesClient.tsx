@@ -172,6 +172,7 @@ export function TradesClient({
           trade={modal.trade}
           accounts={accounts}
           userConcepts={userConcepts}
+          currency={currency}
           onClose={() => setModal({ open: false, trade: null })}
           onSaved={() => {
             setModal({ open: false, trade: null });
