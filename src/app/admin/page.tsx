@@ -8,6 +8,7 @@ import { fmtSignedMoney } from "@/lib/format";
 import { getSiteConfig } from "@/lib/siteconfig";
 import { AdminUserRow } from "@/components/AdminUserRow";
 import { AdminSiteControls } from "@/components/AdminSiteControls";
+import { AdminPropFirms } from "@/components/AdminPropFirms";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin" };
@@ -69,6 +70,8 @@ export default async function AdminPage() {
       </div>
 
       <AdminSiteControls initial={site} />
+
+      <AdminPropFirms />
 
       <h2 className="pt-2 text-base font-semibold">Users</h2>
       <div className="card overflow-x-auto p-0">

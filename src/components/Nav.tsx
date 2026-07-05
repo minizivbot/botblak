@@ -63,6 +63,11 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M7.5 10l1.8 1.8L13 8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  prop: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <path d="M4 8l6-4 6 4M5 8v7h10V8M8 15v-3h4v3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 const links = [
@@ -71,6 +76,7 @@ const links = [
   { href: "/trades", label: "Trades", icon: "trades" },
   { href: "/journal", label: "Journal", icon: "journal" },
   { href: "/leaderboard", label: "Leaderboard", icon: "leaderboard" },
+  { href: "/prop-firms", label: "Prop Firms", icon: "prop" },
   { href: "/motivation", label: "Daily Motivation", icon: "motivation" },
   { href: "/learn", label: "Learn", icon: "learn" },
   { href: "/import", label: "Import & Sync", icon: "import" },

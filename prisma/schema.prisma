@@ -125,3 +125,14 @@ model Upload {
   data      String // base64-encoded image bytes (kept in DB so it persists on serverless)
   createdAt DateTime @default(now())
 }
+
+model PropFirm {
+  id           String  @id @default(cuid())
+  name         String
+  blurb        String
+  highlight    String? // e.g. "50% off with code ZIV"
+  affiliateUrl String  @default("")
+  emoji        String  @default("🏦")
+  sortOrder    Int     @default(0)
+  enabled      Boolean @default(true)
+}

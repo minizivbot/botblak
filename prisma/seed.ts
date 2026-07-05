@@ -241,6 +241,26 @@ async function main() {
     }
   }
 
+  // Curated prop firms for the affiliate section. Fill in your own referral
+  // links via the admin panel; these seed only the names/blurbs (upsert-safe,
+  // never overwrites an affiliate URL you've already set).
+  const firms = [
+    { name: "Apex Trader Funding", emoji: "🚀", blurb: "One of the largest futures prop firms. Frequent 80–90% off evaluation sales and up to 20 accounts.", sortOrder: 1 },
+    { name: "TakeProfit Trader", emoji: "🎯", blurb: "Futures evaluations with a real payout-from-day-one funded model and a one-step challenge.", sortOrder: 2 },
+    { name: "MyFundedFutures", emoji: "📈", blurb: "Popular no-time-limit futures challenges with several plan types (Starter, Expert, Milestone).", sortOrder: 3 },
+    { name: "Tradeify", emoji: "⚡", blurb: "Futures funding with instant-funding options and straightforward consistency rules.", sortOrder: 4 },
+    { name: "Topstep", emoji: "🏔️", blurb: "The veteran futures combine. Well-known Trading Combine → Express Funded path.", sortOrder: 5 },
+    { name: "Bulenox", emoji: "🐂", blurb: "Futures evaluations with flexible reset options and regular discount codes.", sortOrder: 6 },
+  ];
+  for (const f of firms) {
+    const existing = await prisma.propFirm.findFirst({ where: { name: f.name } });
+    if (existing) {
+      await prisma.propFirm.update({ where: { id: existing.id }, data: { blurb: f.blurb, emoji: f.emoji, sortOrder: f.sortOrder } });
+    } else {
+      await prisma.propFirm.create({ data: f });
+    }
+  }
+
   console.log(
     `Seeded demo account (demo / demo1234) with ${trades.length} futures trades and ${journalEntries.length} journal entries.`,
   );
