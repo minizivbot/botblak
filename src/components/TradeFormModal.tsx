@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import type { TradeDTO } from "@/lib/dto";
-import { ICT_SETUPS, ICT_CONCEPTS } from "@/lib/killzones";
+import { ICT_SETUPS } from "@/lib/killzones";
+
+type AccountOption = { id: string; name: string; isCopy: boolean };
 
 type Props = {
   trade: TradeDTO | null; // null = create
+  accounts: AccountOption[];
+  userConcepts: string[];
   onClose: () => void;
   onSaved: () => void;
 };
@@ -14,7 +18,12 @@ function toLocalInput(iso: string | null): string {
   return iso ? iso.slice(0, 16) : "";
 }
 
-export function TradeFormModal({ trade, onClose, onSaved }: Props) {
+/** Current time as a datetime-local value (UTC, matching how trades are stored). */
+function nowInput(): string {
+  return new Date().toISOString().slice(0, 16);
+}
+
+export function TradeFormModal({ trade, accounts, userConcepts, onClose, onSaved }: Props) {
   const [form, setForm] = useState({
     symbol: trade?.symbol ?? "",
     direction: trade?.direction ?? "LONG",
@@ -22,11 +31,14 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
     exitPrice: trade?.exitPrice?.toString() ?? "",
     size: trade?.size?.toString() ?? "",
     fees: trade?.fees?.toString() ?? "0",
-    entryDate: toLocalInput(trade?.entryDate ?? null),
+    // New trades start stamped with the current date-time automatically.
+    entryDate: trade ? toLocalInput(trade.entryDate) : nowInput(),
     exitDate: toLocalInput(trade?.exitDate ?? null),
     strategy: trade?.strategy ?? "",
     notes: trade?.notes ?? "",
+    accountId: trade?.accountId ?? accounts[0]?.id ?? "",
   });
+  const [conceptList, setConceptList] = useState<string[]>(userConcepts);
   const [concepts, setConcepts] = useState<string[]>(
     trade?.concepts ? trade.concepts.split(",").map((c) => c.trim()).filter(Boolean) : [],
   );
@@ -42,10 +54,27 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
   const toggleConcept = (c: string) =>
     setConcepts((list) => (list.includes(c) ? list.filter((x) => x !== c) : [...list, c]));
 
+  const saveConceptList = (next: string[]) => {
+    setConceptList(next);
+    // Persist the personal list; failures are non-fatal for the trade itself.
+    fetch("/api/concepts", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ concepts: next }),
+    }).catch(() => null);
+  };
+
   const addCustomConcept = () => {
     const c = customConcept.trim();
-    if (c && !concepts.includes(c)) setConcepts((list) => [...list, c]);
+    if (!c) return;
+    if (!conceptList.includes(c)) saveConceptList([...conceptList, c]);
+    if (!concepts.includes(c)) setConcepts((list) => [...list, c]);
     setCustomConcept("");
+  };
+
+  const removeConceptFromList = (c: string) => {
+    saveConceptList(conceptList.filter((x) => x !== c));
+    setConcepts((list) => list.filter((x) => x !== c));
   };
 
   async function submit(e: React.FormEvent) {
@@ -84,6 +113,7 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
         strategy: form.strategy || null,
         concepts: concepts.length ? concepts.join(", ") : null,
         notes: form.notes || null,
+        accountId: form.accountId || null,
         screenshotPath,
       };
 
@@ -111,6 +141,19 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
         </div>
 
         <form onSubmit={submit} className="space-y-3">
+          {accounts.length > 0 && (
+            <div>
+              <label className="field-label">Trading account</label>
+              <select className="field" value={form.accountId} onChange={set("accountId")}>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}{a.isCopy ? " (copy)" : ""}
+                  </option>
+                ))}
+                <option value="">No account</option>
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="field-label">Symbol *</label>
@@ -163,22 +206,31 @@ export function TradeFormModal({ trade, onClose, onSaved }: Props) {
           <div>
             <label className="field-label">Concepts used</label>
             <div className="flex flex-wrap gap-1.5">
-              {[...new Set([...ICT_CONCEPTS, ...concepts])].map((c) => (
-                <button
+              {[...new Set([...conceptList, ...concepts])].map((c) => (
+                <span
                   key={c}
-                  type="button"
-                  onClick={() => toggleConcept(c)}
-                  aria-pressed={concepts.includes(c)}
-                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1 rounded-full border pl-2.5 text-xs font-medium transition-colors ${
                     concepts.includes(c)
                       ? "border-accent/60 bg-accent/15 text-ink"
                       : "border-edge text-muted hover:border-edge-strong hover:text-ink-2"
                   }`}
                 >
-                  {c}
-                </button>
+                  <button type="button" onClick={() => toggleConcept(c)} aria-pressed={concepts.includes(c)} className="py-1">
+                    {c}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${c} from your concept list`}
+                    title="Remove from my list"
+                    onClick={() => removeConceptFromList(c)}
+                    className="rounded-full px-1.5 py-1 text-muted hover:text-loss"
+                  >
+                    ×
+                  </button>
+                </span>
               ))}
             </div>
+            <p className="mt-1 text-xs text-muted">Tap to select · × removes it from your personal list.</p>
             <div className="mt-2 flex gap-2">
               <input
                 className="field"

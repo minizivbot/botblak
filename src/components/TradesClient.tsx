@@ -8,7 +8,19 @@ import { killzone } from "@/lib/killzones";
 import { fmtMoney, fmtSignedMoney, fmtDateTime, fmtNum } from "@/lib/format";
 import { TradeFormModal } from "./TradeFormModal";
 
-export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currency: string }) {
+type AccountOption = { id: string; name: string; isCopy: boolean };
+
+export function TradesClient({
+  trades,
+  currency,
+  accounts,
+  userConcepts,
+}: {
+  trades: TradeDTO[];
+  currency: string;
+  accounts: AccountOption[];
+  userConcepts: string[];
+}) {
   const router = useRouter();
   const search = useSearchParams().toString();
   const [modal, setModal] = useState<{ open: boolean; trade: TradeDTO | null }>({ open: false, trade: null });
@@ -81,7 +93,14 @@ export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currenc
               const pnl = tradePnl(t);
               return (
                 <tr key={t.id} className="border-b border-edge/50 last:border-0 hover:bg-raised/40" title={t.notes ?? undefined}>
-                  <td className="px-4 py-2.5 font-medium">{t.symbol}</td>
+                  <td className="px-4 py-2.5 font-medium">
+                    {t.symbol}
+                    {t.accountName && (
+                      <span className={`mt-0.5 block text-xs font-normal ${t.accountIsCopy ? "text-accent" : "text-muted"}`}>
+                        {t.accountName}{t.accountIsCopy ? " · copy" : ""}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-2 py-2.5">
                     <span
                       className={`rounded px-1.5 py-0.5 text-xs font-medium ${
@@ -151,6 +170,8 @@ export function TradesClient({ trades, currency }: { trades: TradeDTO[]; currenc
       {modal.open && (
         <TradeFormModal
           trade={modal.trade}
+          accounts={accounts}
+          userConcepts={userConcepts}
           onClose={() => setModal({ open: false, trade: null })}
           onSaved={() => {
             setModal({ open: false, trade: null });

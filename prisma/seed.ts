@@ -81,9 +81,21 @@ async function main() {
     create: { username: "demo", passwordHash: hashPassword("demo1234") },
   });
 
+  // Two demo trading accounts — a personal one and a copy-trading one.
+  const mainAcc = await prisma.account.upsert({
+    where: { userId_name: { userId: demo.id, name: "Main" } },
+    update: {},
+    create: { userId: demo.id, name: "Main" },
+  });
+  const copyAcc = await prisma.account.upsert({
+    where: { userId_name: { userId: demo.id, name: "Copy — Prop" } },
+    update: { isCopy: true },
+    create: { userId: demo.id, name: "Copy — Prop", isCopy: true },
+  });
+
   await prisma.trade.deleteMany({ where: { userId: demo.id, source: "seed" } });
 
-  for (const t of trades) {
+  for (const [i, t] of trades.entries()) {
     await prisma.trade.create({
       data: {
         ...t,
@@ -91,6 +103,8 @@ async function main() {
         exitDate: new Date(t.exitDate),
         source: "seed",
         userId: demo.id,
+        // Roughly a quarter of the sample trades sit in the copy account.
+        accountId: i % 4 === 3 ? copyAcc.id : mainAcc.id,
       },
     });
   }

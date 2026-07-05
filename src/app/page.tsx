@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
-import { parseFilters, filtersToWhere, applyKillzoneFilter } from "@/lib/filters";
+import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
 import {
   computeStats,
   equityCurve,
@@ -36,7 +36,12 @@ export default async function DashboardPage({
   if (!userId) redirect("/login");
 
   const filters = parseFilters(await searchParams);
-  const where = { ...filtersToWhere(filters), userId };
+  const accounts = await prisma.account.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, isCopy: true },
+  });
+  const where = { ...filtersToWhere(filters), ...accountWhere(filters, accounts), userId };
 
   const [settings, tradesRaw, symbolRows, strategyRows] = await Promise.all([
     prisma.settings.findUnique({ where: { userId } }),
@@ -102,6 +107,7 @@ export default async function DashboardPage({
       <FilterBar
         symbols={symbolRows.map((r) => r.symbol)}
         strategies={strategyRows.map((r) => r.strategy!).sort()}
+        accounts={accounts}
       />
 
       {/* Stat tiles */}

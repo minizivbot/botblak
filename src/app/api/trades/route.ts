@@ -31,6 +31,10 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: zodMessage(parsed.error) }, { status: 400 });
     }
+    if (parsed.data.accountId) {
+      const owns = await prisma.account.findFirst({ where: { id: parsed.data.accountId, userId } });
+      if (!owns) return NextResponse.json({ error: "Unknown trading account" }, { status: 400 });
+    }
     const trade = await prisma.trade.create({ data: { ...parsed.data, source: "manual", userId } });
     return NextResponse.json({ trade }, { status: 201 });
   } catch (e) {

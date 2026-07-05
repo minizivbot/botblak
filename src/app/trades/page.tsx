@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
-import { parseFilters, filtersToWhere } from "@/lib/filters";
+import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
+import { parseConcepts } from "@/lib/concepts";
 import { toTradeDTO } from "@/lib/dto";
 import { FilterBar } from "@/components/FilterBar";
 import { TradesClient } from "@/components/TradesClient";
@@ -18,13 +19,25 @@ export default async function TradesPage({
   if (!userId) redirect("/login");
 
   const filters = parseFilters(await searchParams);
+  const accounts = await prisma.account.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, isCopy: true },
+  });
 
-  const [trades, settings, symbolRows, strategyRows] = await Promise.all([
-    prisma.trade.findMany({ where: { ...filtersToWhere(filters), userId }, orderBy: { entryDate: "desc" } }),
+  const [tradesRaw, settings, user, symbolRows, strategyRows] = await Promise.all([
+    prisma.trade.findMany({
+      where: { ...filtersToWhere(filters), ...accountWhere(filters, accounts), userId },
+      orderBy: { entryDate: "desc" },
+      include: { account: { select: { name: true, isCopy: true } } },
+    }),
     prisma.settings.findUnique({ where: { userId } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { concepts: true } }),
     prisma.trade.findMany({ where: { userId }, distinct: ["symbol"], select: { symbol: true }, orderBy: { symbol: "asc" } }),
     prisma.trade.findMany({ where: { userId, strategy: { not: null } }, distinct: ["strategy"], select: { strategy: true } }),
   ]);
+
+  const trades = applyKillzoneFilter(tradesRaw, filters);
 
   return (
     <div className="space-y-4">
@@ -32,8 +45,14 @@ export default async function TradesPage({
       <FilterBar
         symbols={symbolRows.map((r) => r.symbol)}
         strategies={strategyRows.map((r) => r.strategy!).sort()}
+        accounts={accounts}
       />
-      <TradesClient trades={trades.map(toTradeDTO)} currency={settings?.currency ?? "USD"} />
+      <TradesClient
+        trades={trades.map(toTradeDTO)}
+        currency={settings?.currency ?? "USD"}
+        accounts={accounts}
+        userConcepts={parseConcepts(user?.concepts)}
+      />
     </div>
   );
 }

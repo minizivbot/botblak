@@ -4,13 +4,16 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { KILLZONES } from "@/lib/killzones";
 
+type AccountOption = { id: string; name: string; isCopy: boolean };
+
 type Props = {
   symbols: string[];
   strategies: string[];
+  accounts?: AccountOption[];
 };
 
-/** Shared filter row: date range, symbol, strategy, direction. State lives in the URL. */
-export function FilterBar({ symbols, strategies }: Props) {
+/** Shared filter row: account, date range, symbol, strategy, direction. State lives in the URL. */
+export function FilterBar({ symbols, strategies, accounts = [] }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -45,7 +48,10 @@ export function FilterBar({ symbols, strategies }: Props) {
     [params, pathname, router],
   );
 
-  const hasFilters = ["from", "to", "symbol", "strategy", "direction", "killzone"].some((k) => params.get(k));
+  const hasFilters = ["from", "to", "symbol", "strategy", "direction", "killzone", "account"].some((k) =>
+    params.get(k),
+  );
+  const hasCopyAccounts = accounts.some((a) => a.isCopy);
   const presets: { label: string; value: number | "ytd" | "all" }[] = [
     { label: "7D", value: 7 },
     { label: "30D", value: 30 },
@@ -77,6 +83,25 @@ export function FilterBar({ symbols, strategies }: Props) {
           </button>
         ))}
       </div>
+      {accounts.length > 0 && (
+        <div>
+          <label className="field-label" htmlFor="f-account">Account</label>
+          <select
+            id="f-account"
+            className="field w-auto"
+            value={params.get("account") ?? ""}
+            onChange={(e) => setParam("account", e.target.value)}
+          >
+            <option value="">All accounts</option>
+            {hasCopyAccounts && <option value="copy">Copy only</option>}
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}{a.isCopy ? " (copy)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div>
         <label className="field-label" htmlFor="f-from">From</label>
         <input

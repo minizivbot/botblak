@@ -15,16 +15,32 @@ model User {
   id           String         @id @default(cuid())
   username     String         @unique
   passwordHash String
+  concepts     String? // JSON array of the user's personal concept list
   createdAt    DateTime       @default(now())
   trades       Trade[]
   journal      JournalEntry[]
   settings     Settings?
+  accounts     Account[]
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  isCopy    Boolean  @default(false) // copy-trading account
+  createdAt DateTime @default(now())
+  trades    Trade[]
+
+  @@unique([userId, name])
 }
 
 model Trade {
   id             String    @id @default(cuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId      String?
+  account        Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
   symbol         String
   direction      String // "LONG" | "SHORT"
   entryPrice     Float

@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         username,
         passwordHash: hashPassword(password),
         settings: { create: { startingBalance: 10000, currency: "USD" } },
+        accounts: { create: { name: "Main" } },
       },
     });
 

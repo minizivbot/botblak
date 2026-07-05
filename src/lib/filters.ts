@@ -8,6 +8,8 @@ export type TradeFilters = {
   strategy?: string;
   direction?: "LONG" | "SHORT";
   killzone?: Killzone;
+  /** "copy" = all copy accounts, otherwise an account id. */
+  account?: string;
 };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -28,7 +30,20 @@ export function parseFilters(params: Record<string, string | string[] | undefine
     strategy: get("strategy"),
     direction: direction === "LONG" || direction === "SHORT" ? direction : undefined,
     killzone: kz && (KILLZONES as readonly string[]).includes(kz) ? (kz as Killzone) : undefined,
+    account: get("account"),
   };
+}
+
+/** Account filter as a Prisma where fragment, validated against the user's accounts. */
+export function accountWhere(
+  f: TradeFilters,
+  accounts: { id: string; isCopy: boolean }[],
+): Prisma.TradeWhereInput {
+  if (!f.account) return {};
+  if (f.account === "copy") {
+    return { accountId: { in: accounts.filter((a) => a.isCopy).map((a) => a.id) } };
+  }
+  return accounts.some((a) => a.id === f.account) ? { accountId: f.account } : {};
 }
 
 /** Killzone is computed from entryDate, so it filters in memory after the query. */

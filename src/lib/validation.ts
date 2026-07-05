@@ -17,6 +17,7 @@ export const tradeSchema = z
     exitDate: z.coerce.date().nullish(),
     strategy: z.string().trim().max(50).nullish().transform((s) => s || null),
     concepts: z.string().trim().max(500).nullish().transform((s) => s || null),
+    accountId: z.string().trim().max(50).nullish().transform((s) => s || null),
     notes: z.string().trim().max(5000).nullish().transform((s) => s || null),
     screenshotPath: z.string().max(500).nullish().transform((s) => s || null),
   })

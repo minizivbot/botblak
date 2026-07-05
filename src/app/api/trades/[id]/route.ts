@@ -31,6 +31,10 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     const existing = await prisma.trade.findFirst({ where: { id, userId } });
     if (!existing) return NextResponse.json({ error: "Trade not found" }, { status: 404 });
 
+    if (parsed.data.accountId) {
+      const owns = await prisma.account.findFirst({ where: { id: parsed.data.accountId, userId } });
+      if (!owns) return NextResponse.json({ error: "Unknown trading account" }, { status: 400 });
+    }
     const trade = await prisma.trade.update({ where: { id }, data: parsed.data });
     return NextResponse.json({ trade });
   } catch (e) {
