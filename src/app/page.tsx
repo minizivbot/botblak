@@ -97,7 +97,17 @@ export default async function DashboardPage({
 
   const trades = applyKillzoneFilter(tradesRaw, filters);
   const currency = settings?.currency ?? "USD";
-  const startingBalance = settings?.startingBalance ?? 10000;
+
+  // Starting balance follows the accounts in view: each account uses its own
+  // size (prop account size when set, else the global Settings balance), summed
+  // across the accounts the current filter shows. Falls back to the global
+  // balance when no accounts match (e.g. brand-new user).
+  const globalStart = settings?.startingBalance ?? 10000;
+  const accountsInView = accountsFull.filter(
+    (a) => !filters.account || filters.account === a.id || (filters.account === "copy" && a.isCopy),
+  );
+  const summedStart = accountsInView.reduce((s, a) => s + (a.propStartBalance ?? globalStart), 0);
+  const startingBalance = accountsInView.length > 0 ? summedStart : globalStart;
 
   const stats = computeStats(trades, startingBalance);
   const curve = equityCurve(trades, startingBalance);
@@ -154,7 +164,9 @@ export default async function DashboardPage({
             )}
           </div>
           <p className="mt-1 text-sm text-muted">
-            on {fmtMoney(startingBalance, currency)} starting balance · {fmtMoney(stats.totalFees, currency)} paid in fees
+            on {fmtMoney(startingBalance, currency)} starting balance
+            {accountsInView.length > 1 && ` (across ${accountsInView.length} accounts)`} ·{" "}
+            {fmtMoney(stats.totalFees, currency)} paid in fees
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
