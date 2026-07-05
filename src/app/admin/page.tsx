@@ -5,7 +5,9 @@ import { requireUserId } from "@/lib/auth";
 import { isUserAdmin } from "@/lib/admin";
 import { computeStats, type StatsTrade } from "@/lib/stats";
 import { fmtSignedMoney } from "@/lib/format";
+import { getSiteConfig } from "@/lib/siteconfig";
 import { AdminUserRow } from "@/components/AdminUserRow";
+import { AdminSiteControls } from "@/components/AdminSiteControls";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin" };
@@ -29,6 +31,7 @@ export default async function AdminPage() {
     },
   });
 
+  const site = await getSiteConfig();
   const totalTrades = users.reduce((s, u) => s + u._count.trades, 0);
   const rows = users.map((u) => ({
     id: u.id,
@@ -65,6 +68,9 @@ export default async function AdminPage() {
         </div>
       </div>
 
+      <AdminSiteControls initial={site} />
+
+      <h2 className="pt-2 text-base font-semibold">Users</h2>
       <div className="card overflow-x-auto p-0">
         <table className="w-full min-w-[640px] text-sm">
           <thead>

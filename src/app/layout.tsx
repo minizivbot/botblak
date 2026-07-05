@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { getViewer } from "@/lib/viewer";
+import { getSiteConfig } from "@/lib/siteconfig";
+import { AnnouncementBar } from "@/components/AnnouncementBar";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://mytradezone.vercel.app";
 
@@ -35,12 +37,13 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const viewer = await getViewer();
+  const [viewer, site] = await Promise.all([getViewer(), getSiteConfig()]);
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
+        {site.announcement && <AnnouncementBar text={site.announcement} level={site.announcementLevel} />}
         <div className="flex min-h-screen flex-col md:flex-row">
-          <Nav username={viewer.username} authed={!viewer.isDemo} isAdmin={viewer.isAdmin} />
+          <Nav username={viewer.username} authed={!viewer.isDemo} isAdmin={viewer.isAdmin} showLeaderboard={site.leaderboardEnabled} />
           <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">{children}</div>
           </main>

@@ -59,6 +59,10 @@ export async function GET(req: NextRequest) {
     }
   }
   if (!user) {
+    // Respect the admin's "registration closed" switch for brand-new accounts.
+    const { getSiteConfig } = await import("@/lib/siteconfig");
+    if (!(await getSiteConfig()).registrationOpen) return fail("registration-closed");
+
     const base =
       (profile.email?.split("@")[0] || profile.name || "trader")
         .toLowerCase()

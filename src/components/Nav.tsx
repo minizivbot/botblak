@@ -77,7 +77,17 @@ const links = [
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
-export function Nav({ username, authed, isAdmin = false }: { username: string | null; authed: boolean; isAdmin?: boolean }) {
+export function Nav({
+  username,
+  authed,
+  isAdmin = false,
+  showLeaderboard = true,
+}: {
+  username: string | null;
+  authed: boolean;
+  isAdmin?: boolean;
+  showLeaderboard?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -91,7 +101,8 @@ export function Nav({ username, authed, isAdmin = false }: { username: string | 
   if (pathname === "/login" || pathname === "/register") return null;
 
   const initial = (username?.[0] ?? "?").toUpperCase();
-  const navLinks = isAdmin ? [...links, { href: "/admin", label: "Admin", icon: "admin" }] : links;
+  let navLinks = showLeaderboard ? links : links.filter((l) => l.href !== "/leaderboard");
+  if (isAdmin) navLinks = [...navLinks, { href: "/admin", label: "Admin", icon: "admin" }];
 
   const accountBox = authed ? (
     <div className="rounded-xl border border-edge bg-raised/50 p-3">

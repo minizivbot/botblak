@@ -27,6 +27,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const { getSiteConfig } = await import("@/lib/siteconfig");
+    if (!(await getSiteConfig()).registrationOpen) {
+      return NextResponse.json({ error: "Registration is currently closed." }, { status: 403 });
+    }
+
     const body = await req.json().catch(() => null);
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {

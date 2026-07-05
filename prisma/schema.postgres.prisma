@@ -110,3 +110,12 @@ model Settings {
   maxDailyLoss    Float? // risk guard: stop-trading alert when today's losses reach this
   showOnLeaderboard Boolean @default(true) // opt out of the public leaderboard
 }
+
+model SiteConfig {
+  id                 String  @id @default("singleton")
+  announcement       String? // site-wide banner message; null = hidden
+  announcementLevel  String  @default("info") // "info" | "warning" | "success"
+  registrationOpen   Boolean @default(true) // allow new sign-ups
+  leaderboardEnabled Boolean @default(true) // show the public leaderboard
+  updatedAt          DateTime @updatedAt
+}

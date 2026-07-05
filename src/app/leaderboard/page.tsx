@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getViewer } from "@/lib/viewer";
+import { getSiteConfig } from "@/lib/siteconfig";
 import { computeStats, type StatsTrade } from "@/lib/stats";
 import { fmtSignedMoney, fmtPct } from "@/lib/format";
 
@@ -20,6 +21,19 @@ type Row = {
 
 export default async function LeaderboardPage() {
   const { username } = await getViewer();
+
+  if (!(await getSiteConfig()).leaderboardEnabled) {
+    return (
+      <div className="mx-auto max-w-xl">
+        <div className="card text-center">
+          <p className="text-4xl">🏆</p>
+          <h1 className="mt-2 text-lg font-semibold">Leaderboard is off</h1>
+          <p className="mt-1 text-sm text-muted">The leaderboard is currently disabled by the site admin.</p>
+          <Link href="/" className="btn-ghost mt-4 inline-block">← Back to dashboard</Link>
+        </div>
+      </div>
+    );
+  }
 
   const users = await prisma.user.findMany({
     select: {

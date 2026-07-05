@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 const ERRORS: Record<string, string> = {
   "google-not-configured": "Google sign-in isn't set up on this server yet.",
+  "registration-closed": "New sign-ups are currently closed.",
   "google-state": "Google sign-in expired — please try again.",
   "google-token": "Google didn't accept the sign-in. Please try again.",
   "google-unreachable": "Couldn't reach Google. Please try again.",
