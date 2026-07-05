@@ -48,19 +48,36 @@ function CsvImport() {
         }
         setHeaders(hdrs);
         setRows(res.data);
-        setMapping(autoMap(hdrs, preset));
+        // Map against normalized columns for presets that rewrite rows.
+        const nHeaders = preset.normalize
+          ? res.data[0]
+            ? Object.keys(preset.normalize(res.data[0]))
+            : []
+          : hdrs;
+        setMapping(autoMap(nHeaders, preset));
       },
       error: (err) => setError(`CSV parse failed: ${err.message}`),
     });
   }
 
+  // Some presets (Tradovate) rewrite each row into canonical columns before
+  // mapping. Derive the effective rows/headers the mapping UI works against.
+  const normRows = useMemo(
+    () => (preset.normalize ? rows.map(preset.normalize) : rows),
+    [rows, preset],
+  );
+  const normHeaders = useMemo(
+    () => (preset.normalize ? (normRows[0] ? Object.keys(normRows[0]) : []) : headers),
+    [preset, normRows, headers],
+  );
+
   // Re-run auto-mapping when the preset changes on an already-loaded file.
   useEffect(() => {
-    if (headers.length) setMapping(autoMap(headers, CSV_PRESETS.find((p) => p.id === presetId)!));
+    if (normHeaders.length) setMapping(autoMap(normHeaders, preset));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetId]);
 
-  const parsed = useMemo(() => rows.map((r) => rowToTrade(r, mapping)), [rows, mapping]);
+  const parsed = useMemo(() => normRows.map((r) => rowToTrade(r, mapping)), [normRows, mapping]);
   const good = parsed.filter((p) => p.ok);
   const bad = parsed.filter((p) => !p.ok);
   const missingRequired = REQUIRED_FIELDS.filter((f) => !mapping[f]);
@@ -117,7 +134,7 @@ function CsvImport() {
       </div>
       <p className="text-xs text-muted">{preset.description}</p>
 
-      {headers.length > 0 && (
+      {normHeaders.length > 0 && (
         <>
           <div>
             <h3 className="mb-2 text-sm font-semibold text-ink-2">
@@ -136,7 +153,7 @@ function CsvImport() {
                     onChange={(e) => setMapping((m) => ({ ...m, [f]: e.target.value || undefined }))}
                   >
                     <option value="">— not mapped —</option>
-                    {headers.map((h) => (
+                    {normHeaders.map((h) => (
                       <option key={h} value={h}>{h}</option>
                     ))}
                   </select>
@@ -238,7 +255,7 @@ const BROKER_GUIDES: Record<string, Guide> = {
   },
   tradovate: {
     intro:
-      "Futures broker for ES, NQ, MES, MNQ, gold, oil and more. Most retail accounts connect with just your Tradovate username and password. Funded prop accounts sometimes need an API key — both ways are covered below.",
+      "Futures broker for ES, NQ, MES, MNQ, gold, oil and more. Important: Tradovate's API only works for a registered app with API Access — a paid add-on most PROP FIRMS BLOCK. If live sync fails with \"app is not registered\", that's why. The CSV import above always works: in Tradovate go to Performance → export, then pick the \"Tradovate (Performance export)\" preset here.",
     sections: [
       {
         title: "Option A — username & password (most personal accounts)",

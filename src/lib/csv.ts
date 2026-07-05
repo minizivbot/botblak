@@ -1,7 +1,9 @@
 /**
- * CSV import: column-mapping presets for MetaTrader 4/5 statements and a
- * generic preset, plus the row -> trade converter used by the import page.
+ * CSV import: column-mapping presets for MetaTrader 4/5 statements, Tradovate,
+ * and a generic preset, plus the row -> trade converter used by the import page.
  */
+
+import { dollarsPerPoint } from "./instruments";
 
 export const TRADE_FIELDS = [
   "symbol",
@@ -41,6 +43,12 @@ export type CsvPreset = {
   description: string;
   /** For each trade field, candidate header names (lowercased) in priority order. */
   headerCandidates: Partial<Record<TradeField, string[]>>;
+  /**
+   * Optional per-row rewrite applied before mapping — for broker exports whose
+   * columns don't line up one-to-one with a trade (e.g. Tradovate's buy/sell
+   * round-trip format). Returns a row keyed by canonical column names.
+   */
+  normalize?: (row: Record<string, string>) => Record<string, string>;
 };
 
 export const CSV_PRESETS: CsvPreset[] = [
@@ -79,6 +87,25 @@ export const CSV_PRESETS: CsvPreset[] = [
     },
   },
   {
+    id: "tradovate",
+    label: "Tradovate (Performance export)",
+    description:
+      "The Performance / round-trip report exported from trader.tradovate.com (Performance → export). Auto-detected — just pick the file, no mapping needed. Futures P&L is priced with each contract's point value.",
+    headerCandidates: {
+      symbol: ["symbol"],
+      direction: ["direction"],
+      entryPrice: ["entry price"],
+      exitPrice: ["exit price"],
+      size: ["size"],
+      entryDate: ["entry date"],
+      exitDate: ["exit date"],
+      fees: ["fees"],
+      notes: ["notes"],
+      externalId: ["id"],
+    },
+    normalize: normalizeTradovateRow,
+  },
+  {
     id: "generic",
     label: "Generic CSV",
     description: "Any CSV — map your columns manually below.",
@@ -97,6 +124,46 @@ export const CSV_PRESETS: CsvPreset[] = [
     },
   },
 ];
+
+/**
+ * Convert one Tradovate "Performance" round-trip row into canonical columns.
+ * Tradovate reports each round trip with a buy leg and a sell leg (buyPrice /
+ * sellPrice / boughtTimestamp / soldTimestamp) and no explicit direction — a
+ * long bought first, a short sold first. Size is scaled by the contract's
+ * dollar-per-point so the imported P&L lands in real dollars (MES $5, ES $50…).
+ */
+export function normalizeTradovateRow(row: Record<string, string>): Record<string, string> {
+  const g = (name: string) => {
+    const key = Object.keys(row).find((h) => h.trim().toLowerCase() === name);
+    return key ? row[key] : undefined;
+  };
+  const symbol = (g("symbol") ?? "").trim();
+  const qty = parseNumber(g("qty") ?? g("size")) ?? 0;
+  const buyPrice = g("buyprice") ?? g("buy price") ?? "";
+  const sellPrice = g("sellprice") ?? g("sell price") ?? "";
+  const bought = g("boughttimestamp") ?? g("bought timestamp") ?? "";
+  const sold = g("soldtimestamp") ?? g("sold timestamp") ?? "";
+  const pnl = g("pnl") ?? g("p&l") ?? g("net p&l");
+
+  const bt = Date.parse(bought);
+  const st = Date.parse(sold);
+  // Default to long unless the sell leg is clearly earlier than the buy leg.
+  const isLong = !(Number.isFinite(bt) && Number.isFinite(st) && st < bt);
+  const size = qty * dollarsPerPoint(symbol);
+
+  return {
+    symbol,
+    direction: isLong ? "Buy" : "Sell",
+    "entry price": isLong ? buyPrice : sellPrice,
+    "exit price": isLong ? sellPrice : buyPrice,
+    size: String(size),
+    "entry date": isLong ? bought : sold,
+    "exit date": isLong ? sold : bought,
+    fees: "0",
+    notes: pnl ? `Tradovate reported P&L: ${pnl}` : "",
+    id: `${g("buyfillid") ?? ""}-${g("sellfillid") ?? ""}`,
+  };
+}
 
 /** Guess a column mapping from CSV headers using a preset's candidates. */
 export function autoMap(headers: string[], preset: CsvPreset): Partial<Record<TradeField, string>> {

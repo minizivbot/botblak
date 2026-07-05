@@ -176,8 +176,19 @@ async function authenticate(r: Resolved): Promise<string> {
     );
   }
   if (!res.ok || !data.accessToken) {
+    const err = (data.errorText || "").toLowerCase();
+    // Tradovate's API only authenticates registered applications. An arbitrary
+    // username/password can't get a token without a registered app's cid/sec,
+    // which requires an API Access subscription most prop firms don't offer.
+    if (err.includes("not registered") || err.includes("access")) {
+      throw new BrokerError(
+        "Tradovate's API needs a registered app + API Access, which prop firms usually don't allow. " +
+          "Add your API Client ID/Secret if you have them — otherwise use the CSV import (Tradovate → Performance → export), which always works.",
+        403,
+      );
+    }
     throw new BrokerError(
-      `Tradovate login failed: ${data.errorText || `HTTP ${res.status}`}. Check the username and password.`,
+      `Tradovate login failed: ${data.errorText || `HTTP ${res.status}`}. Check the username, password, and environment (demo/live).`,
       res.status === 200 ? 401 : res.status,
     );
   }
