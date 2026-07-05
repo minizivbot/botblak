@@ -10,7 +10,7 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "setup": "prisma generate && prisma db push && prisma db seed",
-    "vercel-build": "prisma generate --schema=prisma/schema.postgres.prisma && prisma db push --schema=prisma/schema.postgres.prisma --skip-generate --accept-data-loss && tsx prisma/seed.ts && next build"
+    "vercel-build": "prisma generate --schema=prisma/schema.postgres.prisma && prisma db push --schema=prisma/schema.postgres.prisma --skip-generate --accept-data-loss && (tsx prisma/seed.ts || echo 'WARN: seed step failed, continuing build') && next build"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
