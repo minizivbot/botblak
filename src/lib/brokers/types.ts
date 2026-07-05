@@ -49,8 +49,12 @@ export interface BrokerAdapter {
   credentialFields: CredentialField[];
   /** True when env-level credentials are present (server fallback). */
   envConfigured(): boolean;
-  /** Throw BrokerError if the credentials are rejected; used on connect. */
-  verify(creds: BrokerCredentials): Promise<void>;
+  /**
+   * Throw BrokerError if the credentials are rejected; used on connect.
+   * May return a normalized copy of the credentials (e.g. corrected
+   * environment) which is what gets stored.
+   */
+  verify(creds: BrokerCredentials): Promise<BrokerCredentials | void>;
   /** Fetch trades using the given credentials (or env fallback when null). */
   fetchTrades(creds: BrokerCredentials | null): Promise<SyncResult>;
 }

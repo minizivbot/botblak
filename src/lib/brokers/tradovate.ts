@@ -62,10 +62,23 @@ export const tradovateAdapter: BrokerAdapter = {
     return Boolean(process.env.TRADOVATE_USERNAME && process.env.TRADOVATE_PASSWORD);
   },
 
-  async verify(creds: BrokerCredentials): Promise<void> {
+  async verify(creds: BrokerCredentials): Promise<BrokerCredentials> {
     const r = resolve(creds);
     if (!r) throw new BrokerError("Username and password are required.");
-    await authenticate(r); // throws BrokerError when rejected
+    // Try the chosen environment first, then the other one — prop logins are
+    // often "live" even when people expect "demo", and vice versa.
+    try {
+      await authenticate(r);
+      return { ...creds, env: r.env };
+    } catch (first) {
+      const flipped = r.env === "demo" ? "live" : "demo";
+      try {
+        await authenticate({ ...r, env: flipped });
+        return { ...creds, env: flipped };
+      } catch {
+        throw first; // report the error from the environment the user asked for
+      }
+    }
   },
 
   async fetchTrades(creds: BrokerCredentials | null): Promise<SyncResult> {

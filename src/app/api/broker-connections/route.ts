@@ -49,13 +49,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Verify against the broker's API before saving anything.
-    await adapter.verify(creds);
+    // Verify against the broker's API before saving anything. The adapter may
+    // hand back normalized credentials (e.g. the environment that worked).
+    const normalized = (await adapter.verify(creds)) ?? creds;
 
     await prisma.brokerConnection.upsert({
       where: { userId_broker: { userId, broker: adapter.id } },
-      update: { credentials: encryptJson(creds) },
-      create: { userId, broker: adapter.id, credentials: encryptJson(creds) },
+      update: { credentials: encryptJson(normalized) },
+      create: { userId, broker: adapter.id, credentials: encryptJson(normalized) },
     });
     return NextResponse.json({ ok: true, broker: adapter.id });
   } catch (e) {

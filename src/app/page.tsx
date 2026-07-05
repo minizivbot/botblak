@@ -6,6 +6,8 @@ import { ensureDefaultAccount } from "@/lib/accounts";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { CountUp } from "@/components/CountUp";
 import { RiskGuard } from "@/components/RiskGuard";
+import { KillzoneClock } from "@/components/KillzoneClock";
+import { computeInsights } from "@/lib/insights";
 import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
 import {
   computeStats,
@@ -85,6 +87,7 @@ export default async function DashboardPage({
     await prisma.trade.findMany({ where: { userId, exitDate: { gte: startOfToday } } }),
   );
   const todayPnl = todayTrades.reduce((s, t) => s + t.pnl, 0);
+  const insights = computeInsights(trades, currency);
 
   const tone = (v: number | null | undefined) =>
     v == null || v === 0 ? ("neutral" as const) : v > 0 ? ("positive" as const) : ("negative" as const);
@@ -113,9 +116,12 @@ export default async function DashboardPage({
             on {fmtMoney(startingBalance, currency)} starting balance · {fmtMoney(stats.totalFees, currency)} paid in fees
           </p>
         </div>
-        <p className="text-sm text-muted">
-          {stats.closedCount} closed · {stats.openCount} open · {stats.tradeCount} total in view
-        </p>
+        <div className="flex flex-col items-end gap-2">
+          <KillzoneClock />
+          <p className="text-sm text-muted">
+            {stats.closedCount} closed · {stats.openCount} open · {stats.tradeCount} total in view
+          </p>
+        </div>
       </div>
 
       <RiskGuard
@@ -131,6 +137,24 @@ export default async function DashboardPage({
         symbols={symbolRows.map((r) => r.symbol)}
         strategies={strategyRows.map((r) => r.strategy!).sort()}
       />
+
+      {insights.length > 0 && (
+        <section className="card !border-accent/30">
+          <h2 className="card-title flex items-center gap-2">
+            <span>⚡</span> Insights — what your trades are telling you
+          </h2>
+          <ul className="space-y-2.5">
+            {insights.map((ins, i) => (
+              <li key={i} className="flex gap-2.5 text-sm">
+                <span className="shrink-0">{ins.emoji}</span>
+                <span className={ins.tone === "bad" ? "text-ink-2" : ins.tone === "good" ? "text-ink" : "text-ink-2"}>
+                  {ins.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
