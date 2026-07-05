@@ -13,9 +13,14 @@ export function AccountSwitcher({ accounts }: { accounts: AccountOption[] }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const active = params.get("account") ?? "";
-  const hasCopy = accounts.some((a) => a.isCopy);
+  // Copy accounts mirror each other, so they collapse into a single "Copy only"
+  // group. Only non-copy accounts get their own chip.
+  const copyAccounts = accounts.filter((a) => a.isCopy);
+  const soloAccounts = accounts.filter((a) => !a.isCopy);
+  const hasCopy = copyAccounts.length > 0;
 
-  if (accounts.length <= 1 && !hasCopy) return null;
+  // Nothing to switch between: a single non-copy account and no copy group.
+  if (soloAccounts.length <= 1 && !hasCopy) return null;
 
   const set = (value: string) => {
     const next = new URLSearchParams(params.toString());
@@ -43,8 +48,8 @@ export function AccountSwitcher({ accounts }: { accounts: AccountOption[] }) {
     <div className="flex flex-wrap items-center gap-2">
       <span className="mr-1 text-xs font-semibold tracking-[0.12em] text-muted uppercase">Accounts</span>
       {chip("", "All")}
-      {hasCopy && chip("copy", "Copy only")}
-      {accounts.map((a) => chip(a.id, a.name, a.isCopy ? "copy" : undefined))}
+      {hasCopy && chip("copy", `Copy only${copyAccounts.length > 1 ? ` (${copyAccounts.length})` : ""}`)}
+      {soloAccounts.map((a) => chip(a.id, a.name))}
     </div>
   );
 }

@@ -100,6 +100,13 @@ async function main() {
     update: copyProp,
     create: { userId: demo.id, name: "Copy — Prop", ...copyProp },
   });
+  // A second copy account so the demo shows how copy accounts collapse into
+  // one "Copy only" group in the switcher.
+  const copyAcc2 = await prisma.account.upsert({
+    where: { userId_name: { userId: demo.id, name: "Copy — Apex" } },
+    update: { isCopy: true },
+    create: { userId: demo.id, name: "Copy — Apex", isCopy: true },
+  });
 
   await prisma.trade.deleteMany({ where: { userId: demo.id, source: "seed" } });
 
@@ -128,8 +135,9 @@ async function main() {
         concepts: conceptsFor(t),
         source: "seed",
         userId: demo.id,
-        // Roughly a quarter of the sample trades sit in the copy account.
-        accountId: i % 4 === 3 ? copyAcc.id : mainAcc.id,
+        // ~half the trades sit in Main; the rest split across the two copy
+        // accounts (which collapse into "Copy only" in the UI).
+        accountId: i % 2 === 0 ? mainAcc.id : i % 4 === 1 ? copyAcc.id : copyAcc2.id,
       },
     });
   }
