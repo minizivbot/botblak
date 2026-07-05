@@ -9,7 +9,13 @@ export const AUTH_COOKIE = "tradezone_session";
 function secret(): string {
   // Set AUTH_SECRET in production (see README). The fallback keeps local dev
   // zero-config; sessions just reset if it changes.
-  return process.env.AUTH_SECRET || "tradezone-dev-secret-change-me";
+  const s = process.env.AUTH_SECRET;
+  if (!s && process.env.NODE_ENV === "production") {
+    // Loud warning: without a real secret, sessions can be forged and broker
+    // credentials are encrypted with a public key. Set AUTH_SECRET in Vercel.
+    console.error("SECURITY: AUTH_SECRET is not set in production — set it in your environment now.");
+  }
+  return s || "tradezone-dev-secret-change-me";
 }
 
 async function hmac(message: string): Promise<string> {

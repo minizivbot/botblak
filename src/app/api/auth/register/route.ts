@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, createSessionValue, AUTH_COOKIE } from "@/lib/auth";
 import { zodMessage } from "@/lib/validation";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 const registerSchema = z.object({
   username: z
@@ -17,6 +18,15 @@ const registerSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // Cap new-account creation per IP to slow signup spam.
+    const rl = rateLimit(`register:${clientIp(req)}`, 5, 60 * 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: `Too many sign-ups from here. Try again later.` },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+      );
+    }
+
     const body = await req.json().catch(() => null);
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {

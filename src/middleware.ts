@@ -1,31 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AUTH_COOKIE, verifySessionValue } from "@/lib/session";
 
-const PUBLIC_PATHS = ["/login", "/register"];
+const PUBLIC_PATHS = ["/login", "/register", "/privacy", "/terms"];
 
 // Pages a logged-out visitor may browse as a live demo (read-only). Everything
 // else (journal, import, settings, all mutating APIs) still requires sign-in.
 const GUEST_PAGES = ["/", "/accounts", "/trades", "/learn", "/motivation", "/leaderboard", "/opengraph-image"];
 
+/** Baseline security headers applied to every response. */
+function withSecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.headers.set("X-DNS-Prefetch-Control", "off");
+  return res;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const allow = () => withSecurityHeaders(NextResponse.next());
+
   if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/api/auth/")) {
-    return NextResponse.next();
+    return allow();
   }
 
   const userId = await verifySessionValue(req.cookies.get(AUTH_COOKIE)?.value);
-  if (userId) return NextResponse.next();
+  if (userId) return allow();
 
   // Guests get the public showcase pages (and any trader profile under /u/).
-  if (GUEST_PAGES.includes(pathname) || pathname.startsWith("/u/")) return NextResponse.next();
+  if (GUEST_PAGES.includes(pathname) || pathname.startsWith("/u/")) return allow();
 
   if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+    return withSecurityHeaders(NextResponse.json({ error: "Not signed in" }, { status: 401 }));
   }
   const login = req.nextUrl.clone();
   login.pathname = "/login";
   login.search = "";
-  return NextResponse.redirect(login);
+  return withSecurityHeaders(NextResponse.redirect(login));
 }
 
 export const config = {

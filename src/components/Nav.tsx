@@ -57,6 +57,12 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M3 8.5h14M6.5 12.5h3" strokeLinecap="round" />
     </svg>
   ),
+  admin: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <path d="M10 2.5l6 2.5v4c0 3.5-2.5 6.3-6 7.5-3.5-1.2-6-4-6-7.5V5l6-2.5z" strokeLinejoin="round" />
+      <path d="M7.5 10l1.8 1.8L13 8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 const links = [
@@ -71,7 +77,7 @@ const links = [
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
-export function Nav({ username, authed }: { username: string | null; authed: boolean }) {
+export function Nav({ username, authed, isAdmin = false }: { username: string | null; authed: boolean; isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -85,6 +91,7 @@ export function Nav({ username, authed }: { username: string | null; authed: boo
   if (pathname === "/login" || pathname === "/register") return null;
 
   const initial = (username?.[0] ?? "?").toUpperCase();
+  const navLinks = isAdmin ? [...links, { href: "/admin", label: "Admin", icon: "admin" }] : links;
 
   const accountBox = authed ? (
     <div className="rounded-xl border border-edge bg-raised/50 p-3">
@@ -120,7 +127,7 @@ export function Nav({ username, authed }: { username: string | null; authed: boo
     </div>
   );
 
-  const items = links.map((l) => {
+  const items = navLinks.map((l) => {
     const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
     return (
       <Link

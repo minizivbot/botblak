@@ -13,6 +13,7 @@ model User {
   passwordHash String? // null for Google-only accounts
   email        String?        @unique
   googleId     String?        @unique
+  isAdmin      Boolean        @default(false)
   concepts     String? // JSON array of the user's personal concept list
   createdAt    DateTime       @default(now())
   trades       Trade[]

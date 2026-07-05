@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, createSessionValue, AUTH_COOKIE } from "@/lib/auth";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
   try {
+    // Throttle repeated sign-in attempts from one IP (brute-force protection).
+    const rl = rateLimit(`login:${clientIp(req)}`, 10, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: `Too many attempts. Try again in ${rl.retryAfter}s.` },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+      );
+    }
+
     const body = (await req.json().catch(() => null)) as { username?: string; password?: string } | null;
     const username = body?.username?.trim().toLowerCase() ?? "";
     const password = body?.password ?? "";

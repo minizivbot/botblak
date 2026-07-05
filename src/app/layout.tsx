@@ -40,7 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <body className="min-h-screen antialiased">
         <div className="flex min-h-screen flex-col md:flex-row">
-          <Nav username={viewer.username} authed={!viewer.isDemo} />
+          <Nav username={viewer.username} authed={!viewer.isDemo} isAdmin={viewer.isAdmin} />
           <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">{children}</div>
           </main>
