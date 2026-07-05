@@ -6,9 +6,17 @@ import { zodMessage } from "@/lib/validation";
 
 type Ctx = { params: Promise<{ id: string }> };
 
+// null clears a prop rule; a positive number sets it.
+const propNum = z.union([z.number().positive(), z.null()]).optional();
+
 const updateSchema = z.object({
   name: z.string().trim().min(1).max(40).optional(),
   isCopy: z.boolean().optional(),
+  propStartBalance: propNum,
+  propProfitTarget: propNum,
+  propMaxDrawdown: propNum,
+  propDrawdownType: z.enum(["trailing", "static"]).nullable().optional(),
+  propMaxDailyLoss: propNum,
 });
 
 export async function PUT(req: NextRequest, ctx: Ctx) {

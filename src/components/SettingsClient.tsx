@@ -4,7 +4,84 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Broker = { id: string; label: string; configured: boolean };
-type AccountRow = { id: string; name: string; isCopy: boolean; tradeCount: number };
+type AccountRow = {
+  id: string;
+  name: string;
+  isCopy: boolean;
+  tradeCount: number;
+  propStartBalance: number | null;
+  propProfitTarget: number | null;
+  propMaxDrawdown: number | null;
+  propDrawdownType: string | null;
+  propMaxDailyLoss: number | null;
+};
+
+function PropRulesEditor({ account, onSaved }: { account: AccountRow; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [start, setStart] = useState(account.propStartBalance?.toString() ?? "");
+  const [target, setTarget] = useState(account.propProfitTarget?.toString() ?? "");
+  const [dd, setDd] = useState(account.propMaxDrawdown?.toString() ?? "");
+  const [ddType, setDdType] = useState(account.propDrawdownType ?? "trailing");
+  const [saving, setSaving] = useState(false);
+  const configured = account.propStartBalance != null;
+
+  async function save() {
+    setSaving(true);
+    const num = (s: string) => (s.trim() === "" ? null : Number(s));
+    await fetch(`/api/accounts/${account.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        propStartBalance: num(start),
+        propProfitTarget: num(target),
+        propMaxDrawdown: num(dd),
+        propDrawdownType: dd.trim() === "" ? null : ddType,
+      }),
+    }).catch(() => null);
+    setSaving(false);
+    setOpen(false);
+    onSaved();
+  }
+
+  return (
+    <div className="mt-2 border-t border-edge/60 pt-2">
+      <button onClick={() => setOpen((v) => !v)} className="text-xs font-medium text-accent hover:underline">
+        {configured ? "🏦 Prop rules ✓ — edit" : "🏦 Set prop-firm rules"}
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2 rounded-lg border border-edge bg-surface/60 p-3">
+          <p className="text-xs text-muted">
+            Turn this account into a tracked prop challenge. Leave a field empty to skip it.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="field-label">Account size</label>
+              <input className="field" type="number" step="any" value={start} onChange={(e) => setStart(e.target.value)} placeholder="50000" />
+            </div>
+            <div>
+              <label className="field-label">Profit target</label>
+              <input className="field" type="number" step="any" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="3000" />
+            </div>
+            <div>
+              <label className="field-label">Max drawdown</label>
+              <input className="field" type="number" step="any" value={dd} onChange={(e) => setDd(e.target.value)} placeholder="2000" />
+            </div>
+            <div>
+              <label className="field-label">Drawdown type</label>
+              <select className="field" value={ddType} onChange={(e) => setDdType(e.target.value)}>
+                <option value="trailing">Trailing</option>
+                <option value="static">Static</option>
+              </select>
+            </div>
+          </div>
+          <button className="btn-primary w-full text-sm" onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Save prop rules"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AccountsManager() {
   const router = useRouter();
@@ -79,30 +156,42 @@ function AccountsManager() {
       </p>
 
       {accounts.map((a) => (
-        <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-edge bg-raised/40 px-3 py-2">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{a.name}</p>
-            <p className="text-xs text-muted">{a.tradeCount} trades</p>
+        <div key={a.id} className="rounded-lg border border-edge bg-raised/40 px-3 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">
+                {a.name}
+                {a.propStartBalance != null && <span className="ml-2 text-xs text-accent">prop</span>}
+              </p>
+              <p className="text-xs text-muted">{a.tradeCount} trades</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <button
+                onClick={() => toggleCopy(a)}
+                className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  a.isCopy ? "border-accent/60 bg-accent/15 text-ink" : "border-edge text-muted hover:text-ink-2"
+                }`}
+                title="Toggle copy-trading flag"
+              >
+                {a.isCopy ? "Copy ✓" : "Copy?"}
+              </button>
+              <button
+                onClick={() => remove(a)}
+                className="text-xs text-loss hover:underline disabled:opacity-40"
+                disabled={a.tradeCount > 0}
+                title={a.tradeCount > 0 ? "Move or delete its trades first" : "Delete account"}
+              >
+                Delete
+              </button>
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <button
-              onClick={() => toggleCopy(a)}
-              className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                a.isCopy ? "border-accent/60 bg-accent/15 text-ink" : "border-edge text-muted hover:text-ink-2"
-              }`}
-              title="Toggle copy-trading flag"
-            >
-              {a.isCopy ? "Copy ✓" : "Copy?"}
-            </button>
-            <button
-              onClick={() => remove(a)}
-              className="text-xs text-loss hover:underline disabled:opacity-40"
-              disabled={a.tradeCount > 0}
-              title={a.tradeCount > 0 ? "Move or delete its trades first" : "Delete account"}
-            >
-              Delete
-            </button>
-          </div>
+          <PropRulesEditor
+            account={a}
+            onSaved={() => {
+              load();
+              router.refresh();
+            }}
+          />
         </div>
       ))}
 

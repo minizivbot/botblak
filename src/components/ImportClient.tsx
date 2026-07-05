@@ -213,27 +213,67 @@ function CsvImport() {
 
 type CredField = { key: string; label: string; type?: "text" | "password"; placeholder?: string; optional?: boolean };
 
+type Guide = {
+  intro: string;
+  sections: { title: string; steps: string[] }[];
+  troubleshoot?: { error: string; fix: string }[];
+};
+
 /** Step-by-step "where do I get these credentials?" guides, shown on the site. */
-const BROKER_GUIDES: Record<string, { intro: string; steps: string[] }> = {
+const BROKER_GUIDES: Record<string, Guide> = {
   alpaca: {
     intro: "Free stock paper-trading API — great for practicing with US stocks.",
-    steps: [
-      "Go to alpaca.markets and create a free account.",
-      "Open the dashboard and switch to \"Paper Trading\" (toggle at the top-left).",
-      "In the right sidebar find \"API Keys\" and press \"Generate\".",
-      "Copy the Key ID and the Secret Key and paste them here, then press Verify & connect.",
-      "From now on, one tap on \"Sync now\" pulls all your filled orders into the journal.",
+    sections: [
+      {
+        title: "Get your keys",
+        steps: [
+          "Go to alpaca.markets and create a free account.",
+          "Open the dashboard and switch to \"Paper Trading\" (toggle at the top-left).",
+          "In the right sidebar find \"API Keys\" and press \"Generate\".",
+          "Copy the Key ID and the Secret Key and paste them here, then press Verify & connect.",
+          "From now on, one tap on \"Sync now\" pulls all your filled orders into the journal.",
+        ],
+      },
     ],
   },
   tradovate: {
-    intro: "Futures broker (ES, NQ, MES, MNQ…). Works with your normal login — no API key needed.",
-    steps: [
-      "Use the same username and password you use to sign in to Tradovate itself.",
-      "Type \"demo\" for a demo/sim account or \"live\" for a funded live account.",
-      "Press Verify & connect — we sign in to Tradovate once to confirm the details are right.",
-      "Press \"Sync now\" — your fills are pulled, paired into trades, and priced with real futures point values (ES $50/pt, MES $5/pt…).",
-      "Prop accounts that log in through Tradovate (Apex, TakeProfit, etc.) usually need env = \"live\" with those same credentials.",
-      "If Tradovate answers \"API access required\", generate an API key in Tradovate → Settings → API Access and fill the two optional API fields.",
+    intro:
+      "Futures broker for ES, NQ, MES, MNQ, gold, oil and more. Most retail accounts connect with just your Tradovate username and password. Funded prop accounts sometimes need an API key — both ways are covered below.",
+    sections: [
+      {
+        title: "Option A — username & password (most personal accounts)",
+        steps: [
+          "In the Username field, type the exact username you use to log in to the Tradovate app or trader.tradovate.com.",
+          "In Password, type that same login password.",
+          "In Environment, type \"live\" if this is a funded/real account, or \"demo\" if it's a simulation account. Not sure? Leave it — we automatically try both and keep whichever one logs in.",
+          "Press \"Verify & connect\". We sign in to Tradovate once to confirm the details, then store them encrypted.",
+          "Press \"Sync now\" — your fills are pulled, paired into round-trip trades, and priced with real point values (ES $50/pt, MES $5/pt, NQ $20/pt, MNQ $2/pt…).",
+        ],
+      },
+      {
+        title: "Option B — API key (funded / prop accounts, or if Option A is blocked)",
+        steps: [
+          "Log in at trader.tradovate.com on a computer.",
+          "Open the top-right menu → \"Application Settings\" (or \"API Access\" on some layouts).",
+          "Find \"API Access\" and request/enable it. Some prop firms require you to enable this once; it's usually free.",
+          "Create an API application / key. Tradovate gives you a Client ID (a number, the \"cid\") and a Client Secret (the \"sec\").",
+          "Come back here and fill Username, Password, Environment (usually \"live\" for funded), AND paste the cid and sec into the two optional API fields.",
+          "Press \"Verify & connect\", then \"Sync now\".",
+        ],
+      },
+      {
+        title: "Prop firms (Apex, TakeProfit, MyFundedFutures, Tradeify…)",
+        steps: [
+          "These run on top of Tradovate, so the same username/password usually works — set Environment to \"live\".",
+          "If login is rejected, the firm may gate API access. Enable it in Application Settings (Option B), or ask the firm's support to turn on Tradovate API access.",
+          "If the firm blocks API access entirely (some do), no app can connect with a password — use the CSV import above instead. It's 30 seconds and always works.",
+        ],
+      },
+    ],
+    troubleshoot: [
+      { error: "\"login failed\" / \"Check the username and password\"", fix: "Wrong username, password, or environment. Try Environment = \"live\" (funded) or \"demo\" (sim). Confirm the exact login works at trader.tradovate.com first." },
+      { error: "\"API access required\" / 403 / \"not authorized\"", fix: "Your account needs API access enabled. Follow Option B to generate a cid + sec, or ask your prop firm to enable it. If they refuse, use CSV import." },
+      { error: "\"rate-limiting or captcha\" / p-ticket", fix: "Tradovate throttles repeated logins. Wait a minute and press Verify & connect again." },
     ],
   },
 };
@@ -380,13 +420,30 @@ function BrokerSync() {
                 <summary className="cursor-pointer text-xs font-medium text-accent hover:underline">
                   How do I connect this? Step-by-step guide
                 </summary>
-                <div className="mt-2 rounded-lg border border-edge bg-surface/60 p-3">
+                <div className="mt-2 space-y-3 rounded-lg border border-edge bg-surface/60 p-3">
                   <p className="text-sm text-ink-2">{BROKER_GUIDES[b.id].intro}</p>
-                  <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-ink-2">
-                    {BROKER_GUIDES[b.id].steps.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ol>
+                  {BROKER_GUIDES[b.id].sections.map((sec, si) => (
+                    <div key={si}>
+                      <p className="text-xs font-semibold tracking-wide text-ink uppercase">{sec.title}</p>
+                      <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-ink-2">
+                        {sec.steps.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                  {BROKER_GUIDES[b.id].troubleshoot && (
+                    <div>
+                      <p className="text-xs font-semibold tracking-wide text-ink uppercase">If it won&apos;t connect</p>
+                      <ul className="mt-1 space-y-1.5 text-sm text-ink-2">
+                        {BROKER_GUIDES[b.id].troubleshoot!.map((t, i) => (
+                          <li key={i}>
+                            <span className="text-loss">{t.error}</span> — {t.fix}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </details>
             )}

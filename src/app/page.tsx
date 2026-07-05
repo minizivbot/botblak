@@ -7,6 +7,8 @@ import { DemoBanner } from "@/components/DemoBanner";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { CountUp } from "@/components/CountUp";
 import { RiskGuard } from "@/components/RiskGuard";
+import { PropTracker } from "@/components/PropTracker";
+import { propStatus } from "@/lib/prop";
 import { KillzoneClock } from "@/components/KillzoneClock";
 import { computeInsights } from "@/lib/insights";
 import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
@@ -18,6 +20,7 @@ import {
   pnlByGroup,
   pnlByWeekday,
   pnlByKillzone,
+  pnlByConcept,
   dailyPnlMap,
   closedTrades,
 } from "@/lib/stats";
@@ -45,12 +48,28 @@ export default async function DashboardPage({
   if (!isDemo) await ensureDefaultAccount(userId);
 
   const filters = parseFilters(await searchParams);
-  const accounts = await prisma.account.findMany({
+  const accountsFull = await prisma.account.findMany({
     where: { userId },
     orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, isCopy: true },
   });
+  const accounts = accountsFull.map((a) => ({ id: a.id, name: a.name, isCopy: a.isCopy }));
   const where = { ...filtersToWhere(filters), ...accountWhere(filters, accounts), userId };
+
+  // Prop trackers: any prop-configured account that's in the current view.
+  const propAccounts = accountsFull.filter(
+    (a) =>
+      a.propStartBalance != null &&
+      (!filters.account || filters.account === a.id || (filters.account === "copy" && a.isCopy)),
+  );
+  const propStatuses = await Promise.all(
+    propAccounts.map(async (a) => ({
+      account: a,
+      trades: await prisma.trade.findMany({
+        where: { userId, accountId: a.id },
+        select: { direction: true, entryPrice: true, exitPrice: true, size: true, fees: true, exitDate: true },
+      }),
+    })),
+  );
 
   const [settings, tradesRaw, symbolRows, strategyRows] = await Promise.all([
     prisma.settings.findUnique({ where: { userId } }),
@@ -75,6 +94,7 @@ export default async function DashboardPage({
   const byStrategy = pnlByGroup(trades, "strategy");
   const byWeekday = pnlByWeekday(trades);
   const byKillzone = pnlByKillzone(trades);
+  const byConcept = pnlByConcept(trades);
   const daily = dailyPnlMap(trades);
 
   const returnPct = startingBalance > 0 ? stats.totalPnl / startingBalance : null;
@@ -136,6 +156,15 @@ export default async function DashboardPage({
       />
 
       <AccountSwitcher accounts={accounts} />
+
+      {propStatuses.map(({ account, trades: at }) => (
+        <PropTracker
+          key={account.id}
+          accountName={account.name}
+          currency={currency}
+          status={propStatus(account, at)}
+        />
+      ))}
 
       <FilterBar
         symbols={symbolRows.map((r) => r.symbol)}
@@ -299,6 +328,16 @@ export default async function DashboardPage({
           <WeekdayPnlChart rows={byWeekday} currency={currency} />
         </section>
       </div>
+
+      {byConcept.length > 0 && (
+        <section className="card">
+          <h2 className="card-title">P&L by ICT concept</h2>
+          <GroupPnlChart rows={byConcept} currency={currency} />
+          <p className="mt-2 text-xs text-muted">
+            Each trade&apos;s P&L counts toward every concept you tagged on it — see which reads actually pay.
+          </p>
+        </section>
+      )}
 
       {/* Activity */}
       <div className="grid gap-4 lg:grid-cols-2">

@@ -44,6 +44,12 @@ model Account {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   isCopy    Boolean  @default(false) // copy-trading account
+  // Prop-firm rules (all optional; set to turn on the prop tracker for this account)
+  propStartBalance    Float? // account size the firm funded (e.g. 50000)
+  propProfitTarget    Float? // profit goal in account currency (e.g. 3000)
+  propMaxDrawdown     Float? // max trailing drawdown from peak (e.g. 2000)
+  propDrawdownType    String? // "trailing" | "static"
+  propMaxDailyLoss    Float? // per-account daily loss limit
   createdAt DateTime @default(now())
   trades    Trade[]
 

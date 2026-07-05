@@ -19,7 +19,17 @@ export async function GET() {
     include: { _count: { select: { trades: true } } },
   });
   return NextResponse.json({
-    accounts: accounts.map((a) => ({ id: a.id, name: a.name, isCopy: a.isCopy, tradeCount: a._count.trades })),
+    accounts: accounts.map((a) => ({
+      id: a.id,
+      name: a.name,
+      isCopy: a.isCopy,
+      tradeCount: a._count.trades,
+      propStartBalance: a.propStartBalance,
+      propProfitTarget: a.propProfitTarget,
+      propMaxDrawdown: a.propMaxDrawdown,
+      propDrawdownType: a.propDrawdownType,
+      propMaxDailyLoss: a.propMaxDailyLoss,
+    })),
   });
 }
 

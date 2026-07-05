@@ -12,6 +12,7 @@ export type StatsTrade = {
   entryDate: Date;
   exitDate: Date | null;
   strategy: string | null;
+  concepts?: string | null;
 };
 
 export type DirectionStats = { count: number; winRate: number | null; pnl: number };
@@ -181,6 +182,29 @@ export function pnlByGroup(trades: StatsTrade[], key: "symbol" | "strategy") {
     b.pnl += t.pnl;
     b.count += 1;
     buckets.set(group, b);
+  }
+  return [...buckets.entries()]
+    .map(([label, { pnl, count }]) => ({ label, pnl, count }))
+    .sort((a, b) => b.pnl - a.pnl);
+}
+
+/**
+ * Net P&L and trade count per ICT concept. A trade tags several concepts
+ * (comma-separated), so its P&L is attributed to each concept it used.
+ */
+export function pnlByConcept(trades: StatsTrade[]) {
+  const buckets = new Map<string, { pnl: number; count: number }>();
+  for (const t of closedTrades(trades)) {
+    const concepts = (t.concepts ?? "")
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+    for (const c of concepts) {
+      const b = buckets.get(c) ?? { pnl: 0, count: 0 };
+      b.pnl += t.pnl;
+      b.count += 1;
+      buckets.set(c, b);
+    }
   }
   return [...buckets.entries()]
     .map(([label, { pnl, count }]) => ({ label, pnl, count }))

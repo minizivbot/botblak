@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { getViewer } from "@/lib/viewer";
@@ -25,6 +25,13 @@ export const metadata: Metadata = {
     title: "TradeZone — Trading Journal",
     description: "Log trades, sync your broker, and see exactly where your edge is.",
   },
+  appleWebApp: { capable: true, title: "TradeZone", statusBarStyle: "black-translucent" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0e14",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

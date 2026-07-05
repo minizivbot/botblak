@@ -87,13 +87,37 @@ async function main() {
     update: {},
     create: { userId: demo.id, name: "Main" },
   });
+  // The copy account doubles as a tracked prop-firm challenge in the demo.
+  const copyProp = {
+    isCopy: true,
+    propStartBalance: 50000,
+    propProfitTarget: 3000,
+    propMaxDrawdown: 2000,
+    propDrawdownType: "trailing",
+  };
   const copyAcc = await prisma.account.upsert({
     where: { userId_name: { userId: demo.id, name: "Copy — Prop" } },
-    update: { isCopy: true },
-    create: { userId: demo.id, name: "Copy — Prop", isCopy: true },
+    update: copyProp,
+    create: { userId: demo.id, name: "Copy — Prop", ...copyProp },
   });
 
   await prisma.trade.deleteMany({ where: { userId: demo.id, source: "seed" } });
+
+  // Derive ICT concept tags from each trade's setup + notes so the demo shows
+  // a populated "P&L by concept" breakdown.
+  const CONCEPT_KEYWORDS = [
+    "FVG", "Order Block", "Breaker", "Liquidity Sweep", "MSS", "BOS",
+    "SMT Divergence", "OTE", "Judas Swing", "Power of 3", "Silver Bullet",
+    "Turtle Soup", "Draw on Liquidity", "Equal Highs/Lows",
+  ];
+  const conceptsFor = (t: SeedTrade): string => {
+    const hay = `${t.strategy} ${t.notes}`.toLowerCase();
+    const found = new Set<string>();
+    for (const k of CONCEPT_KEYWORDS) if (hay.includes(k.toLowerCase())) found.add(k);
+    if (t.strategy) found.add(t.strategy);
+    if (found.size === 0) found.add("FVG");
+    return [...found].slice(0, 4).join(", ");
+  };
 
   for (const [i, t] of trades.entries()) {
     await prisma.trade.create({
@@ -101,6 +125,7 @@ async function main() {
         ...t,
         entryDate: new Date(t.entryDate),
         exitDate: new Date(t.exitDate),
+        concepts: conceptsFor(t),
         source: "seed",
         userId: demo.id,
         // Roughly a quarter of the sample trades sit in the copy account.
