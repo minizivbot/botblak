@@ -142,6 +142,45 @@ async function main() {
     });
   }
 
+  // A funded/passed prop account so the demo shows the "challenge passed" state.
+  const funded = {
+    isCopy: false,
+    propStartBalance: 50000,
+    propProfitTarget: 3000,
+    propMaxDrawdown: 2000,
+    propDrawdownType: "trailing",
+    propFunded: true,
+  };
+  const fundedAcc = await prisma.account.upsert({
+    where: { userId_name: { userId: demo.id, name: "Prop 50K — Funded ✓" } },
+    update: funded,
+    create: { userId: demo.id, name: "Prop 50K — Funded ✓", ...funded },
+  });
+  // 20 mostly-winning MES trades that clear the $3,000 target (~+$3,180 net).
+  let fday = new Date("2026-05-04T13:40:00Z").getTime();
+  for (let i = 0; i < 20; i++) {
+    const winTrade = i % 5 !== 0; // 16 winners, 4 losers
+    const move = winTrade ? 26 : -22; // points on 2 MES ($5/pt)
+    await prisma.trade.create({
+      data: {
+        userId: demo.id,
+        accountId: fundedAcc.id,
+        symbol: "MES",
+        direction: "LONG",
+        entryPrice: 6900,
+        exitPrice: 6900 + move,
+        size: 10,
+        fees: 2.5,
+        entryDate: new Date(fday),
+        exitDate: new Date(fday + 3600e3),
+        strategy: "Silver Bullet",
+        concepts: "Silver Bullet, FVG, Liquidity Sweep",
+        source: "seed",
+      },
+    });
+    fday += 86400e3;
+  }
+
   for (const j of journalEntries) {
     await prisma.journalEntry.upsert({
       where: { userId_date: { userId: demo.id, date: j.date } },

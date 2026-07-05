@@ -13,6 +13,7 @@ type Row = {
   winRate: number | null;
   trades: number;
   funded: boolean;
+  verified: boolean;
   currency: string;
 };
 
@@ -22,17 +23,21 @@ export default async function LeaderboardPage() {
   const users = await prisma.user.findMany({
     select: {
       username: true,
-      settings: { select: { currency: true } },
+      settings: { select: { currency: true, showOnLeaderboard: true } },
       accounts: { select: { propFunded: true } },
       trades: {
-        select: { symbol: true, direction: true, entryPrice: true, exitPrice: true, size: true, fees: true, entryDate: true, exitDate: true },
+        select: { id: true, symbol: true, direction: true, entryPrice: true, exitPrice: true, size: true, fees: true, entryDate: true, exitDate: true, strategy: true, source: true },
       },
     },
   });
 
   const rows: Row[] = users
+    .filter((u) => u.settings?.showOnLeaderboard !== false)
     .map((u) => {
       const stats = computeStats(u.trades as StatsTrade[], 0);
+      // "Verified" = at least some trades pulled straight from a broker, not
+      // typed in by hand. Self-reported numbers can't earn the badge.
+      const verified = u.trades.some((t) => t.source === "alpaca" || t.source === "tradovate");
       return {
         username: u.username,
         isYou: u.username === username,
@@ -40,6 +45,7 @@ export default async function LeaderboardPage() {
         winRate: stats.winRate,
         trades: stats.closedCount,
         funded: u.accounts.some((a) => a.propFunded),
+        verified,
         currency: u.settings?.currency ?? "USD",
       };
     })
@@ -53,7 +59,9 @@ export default async function LeaderboardPage() {
       <div>
         <h1 className="text-xl font-semibold">Leaderboard</h1>
         <p className="mt-1 text-sm text-muted">
-          Every trader on TradeZone, ranked by net P&L. Pass a prop challenge and you get the FUNDED badge automatically.
+          Every trader on TradeZone, ranked by net P&L. A <span className="text-accent">✓ Verified</span> badge means
+          the trades were pulled straight from a broker — everything else is self-reported, so take unverified numbers
+          with a grain of salt. You can hide yourself from the board in Settings.
         </p>
       </div>
 
@@ -72,9 +80,16 @@ export default async function LeaderboardPage() {
                 {r.username}
                 {r.isYou && <span className="ml-1 text-xs text-accent">you</span>}
               </p>
-              {r.funded && (
-                <span className="mt-1 rounded-full bg-profit/15 px-2 py-0.5 text-[10px] font-bold text-profit">FUNDED ✓</span>
-              )}
+              <div className="mt-1 flex gap-1">
+                {r.verified ? (
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">✓ Verified</span>
+                ) : (
+                  <span className="rounded-full bg-raised px-2 py-0.5 text-[10px] font-medium text-muted">self-reported</span>
+                )}
+                {r.funded && (
+                  <span className="rounded-full bg-profit/15 px-2 py-0.5 text-[10px] font-bold text-profit">FUNDED ✓</span>
+                )}
+              </div>
               <p className={`mt-2 text-xl font-bold ${r.pnl >= 0 ? "text-profit" : "text-loss"}`}>
                 {fmtSignedMoney(r.pnl, r.currency)}
               </p>
@@ -106,7 +121,8 @@ export default async function LeaderboardPage() {
                   <td className="px-4 py-2.5 font-medium">
                     {r.username}
                     {r.isYou && <span className="ml-1 text-xs text-accent">you</span>}
-                    {r.funded && <span className="ml-2 rounded-full bg-profit/15 px-1.5 py-0.5 text-[10px] font-bold text-profit">FUNDED</span>}
+                    {r.verified && <span className="ml-2 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold text-accent">✓</span>}
+                    {r.funded && <span className="ml-1.5 rounded-full bg-profit/15 px-1.5 py-0.5 text-[10px] font-bold text-profit">FUNDED</span>}
                   </td>
                   <td className={`px-4 py-2.5 text-right font-semibold tabular-nums ${r.pnl >= 0 ? "text-profit" : "text-loss"}`}>
                     {fmtSignedMoney(r.pnl, r.currency)}

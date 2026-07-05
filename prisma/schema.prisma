@@ -103,4 +103,5 @@ model Settings {
   startingBalance Float  @default(10000)
   currency        String @default("USD")
   maxDailyLoss    Float? // risk guard: stop-trading alert when today's losses reach this
+  showOnLeaderboard Boolean @default(true) // opt out of the public leaderboard
 }

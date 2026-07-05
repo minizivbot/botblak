@@ -49,6 +49,16 @@ export const settingsSchema = z.object({
     .union([z.coerce.number().positive("Daily loss limit must be positive"), z.literal(""), z.null()])
     .optional()
     .transform((v) => (typeof v === "number" ? v : null)),
+  showOnLeaderboard: z.boolean().optional(),
+});
+
+export const usernameSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .min(3, "Username must be at least 3 characters")
+    .max(24, "Username is too long")
+    .regex(/^[a-zA-Z0-9_.-]+$/, "Only letters, numbers, and . _ - are allowed"),
 });
 
 export const importTradesSchema = z.object({

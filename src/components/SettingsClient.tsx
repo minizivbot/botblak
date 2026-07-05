@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Broker = { id: string; label: string; configured: boolean };
 type AccountRow = {
@@ -213,10 +214,79 @@ function AccountsManager() {
   );
 }
 
+function ProfileCard() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [initial, setInitial] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((b) => {
+        setUsername(b.user?.username ?? "");
+        setInitial(b.user?.username ?? "");
+      })
+      .catch(() => null);
+  }, []);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Failed to update username");
+      setInitial(body.user.username);
+      setMsg({ ok: true, text: "Username updated." });
+      router.refresh();
+    } catch (err) {
+      setMsg({ ok: false, text: err instanceof Error ? err.message : "Failed to update username" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="card max-w-lg space-y-3">
+      <h2 className="text-base font-semibold">Profile</h2>
+      <div>
+        <label className="field-label" htmlFor="p-username">Username</label>
+        <div className="flex gap-2">
+          <input
+            id="p-username"
+            className="field"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            minLength={3}
+            maxLength={24}
+          />
+          <button className="btn-primary shrink-0" type="submit" disabled={saving || username === initial || !username.trim()}>
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-muted">This is the name shown on the leaderboard. Letters, numbers, and . _ - only.</p>
+      </div>
+      {msg && (
+        <p className={`rounded-lg border px-3 py-2 text-sm ${msg.ok ? "border-profit/40 bg-profit/10 text-profit" : "border-loss/40 bg-loss/10 text-loss"}`}>
+          {msg.text}
+        </p>
+      )}
+    </form>
+  );
+}
+
 export function SettingsClient() {
   const [startingBalance, setStartingBalance] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [maxDailyLoss, setMaxDailyLoss] = useState("");
+  const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -229,6 +299,7 @@ export function SettingsClient() {
         setStartingBalance(String(b.settings?.startingBalance ?? 10000));
         setCurrency(b.settings?.currency ?? "USD");
         setMaxDailyLoss(b.settings?.maxDailyLoss != null ? String(b.settings.maxDailyLoss) : "");
+        setShowOnLeaderboard(b.settings?.showOnLeaderboard !== false);
         setBrokers(b.brokers ?? []);
         setLoaded(true);
       })
@@ -250,11 +321,12 @@ export function SettingsClient() {
           startingBalance: Number(startingBalance),
           currency,
           maxDailyLoss: maxDailyLoss.trim() === "" ? null : Number(maxDailyLoss),
+          showOnLeaderboard,
         }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "Failed to save settings");
-      setMessage({ ok: true, text: "Settings saved. Dashboard stats now use the new starting balance." });
+      setMessage({ ok: true, text: "Settings saved." });
     } catch (err) {
       setMessage({ ok: false, text: err instanceof Error ? err.message : "Failed to save settings" });
     } finally {
@@ -264,8 +336,10 @@ export function SettingsClient() {
 
   return (
     <div className="space-y-4">
+      <ProfileCard />
+
       <form onSubmit={save} className="card max-w-lg space-y-4">
-        <h2 className="text-base font-semibold">Account</h2>
+        <h2 className="text-base font-semibold">Account &amp; risk</h2>
         <div>
           <label className="field-label" htmlFor="s-balance">Starting balance</label>
           <input
@@ -306,6 +380,19 @@ export function SettingsClient() {
             When today&apos;s losses reach this amount, the dashboard shows a big STOP banner. Your future self says thanks.
           </p>
         </div>
+        <label className="flex items-start gap-2.5 rounded-lg border border-edge bg-raised/40 px-3 py-2.5">
+          <input
+            type="checkbox"
+            checked={showOnLeaderboard}
+            onChange={(e) => setShowOnLeaderboard(e.target.checked)}
+            disabled={!loaded}
+            className="mt-0.5 h-4 w-4 accent-[#3987e5]"
+          />
+          <span className="text-sm">
+            <span className="font-medium text-ink">Show me on the public leaderboard</span>
+            <span className="block text-xs text-muted">Uncheck to keep your stats private.</span>
+          </span>
+        </label>
         {message && (
           <p
             className={`rounded-lg border px-3 py-2 text-sm ${
@@ -323,17 +410,17 @@ export function SettingsClient() {
       <AccountsManager />
 
       <section className="card max-w-lg space-y-3">
-        <h2 className="text-base font-semibold">Broker API keys</h2>
+        <h2 className="text-base font-semibold">Broker connections</h2>
         <p className="text-sm text-muted">
-          Keys are read from <code className="text-ink-2">.env</code> on the server and are{" "}
-          <span className="text-ink-2">never sent to the browser</span> — this page only shows whether they are set.
-          Edit <code className="text-ink-2">.env</code> and restart the dev server to change them (see README).
+          Connect and sync your brokers on the{" "}
+          <Link href="/import" className="text-accent hover:underline">Import &amp; Sync</Link> page — credentials are
+          verified and stored encrypted there.
         </p>
         {brokers.map((b) => (
           <div key={b.id} className="flex items-center justify-between rounded-lg border border-edge bg-raised/40 px-3 py-2">
             <span className="text-sm font-medium">{b.label}</span>
             <span className={`text-xs font-medium ${b.configured ? "text-profit" : "text-muted"}`}>
-              {b.configured ? "Configured" : "Not configured"}
+              {b.configured ? "● Connected" : "○ Not connected"}
             </span>
           </div>
         ))}
