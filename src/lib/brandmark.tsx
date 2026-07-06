@@ -26,8 +26,9 @@ export function BrandMark({ size = 64 }: { size?: number }) {
           background: "radial-gradient(circle at 28% 20%, rgba(255,255,255,0.4), transparent 55%)",
         }}
       />
-      <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" style={{ position: "relative" }}>
-        <path d="M6 8L18 6L6 17H18" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="none" style={{ position: "relative" }}>
+        <path d="M5 7H12M8 7V17" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M12 7H19L10 17H19" stroke="#7dd3fc" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </div>
   );

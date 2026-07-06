@@ -16,5 +16,6 @@
     <rect x="16" y="16" width="480" height="480" fill="url(#hl)"/>
     <rect x="16" y="272" width="480" height="224" fill="#000" opacity="0.08"/>
   </g>
-  <path d="M128 168L384 128L128 360h256" stroke="#fff" stroke-width="51" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M104 152H256M168 152V360" stroke="#fff" stroke-width="45" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M256 152H408L216 360H408" stroke="#7dd3fc" stroke-width="45" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>

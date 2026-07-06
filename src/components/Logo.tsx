@@ -1,7 +1,8 @@
 /**
- * TradeZone mark: a bold "Z" monogram (for Zone) with its top stroke sloped
- * upward for a subtle growth cue — one continuous stroke, no overlapping
- * segments, so it stays crisp from favicon size up to a share-card logo.
+ * TradeZone mark: a fused "TZ" monogram sharing one top bar — the left half
+ * (white) drops into the T's stem, the right half (accent blue) continues
+ * into the Z's diagonal and base — so the two letters read as one connected
+ * glyph, not two icons side by side.
  */
 export function LogoMark({ size = 32 }: { size?: number }) {
   return (
@@ -10,14 +11,9 @@ export function LogoMark({ size = 32 }: { size?: number }) {
       style={{ width: size, height: size }}
       aria-hidden
     >
-      <svg viewBox="0 0 24 24" fill="none" style={{ width: size * 0.5, height: size * 0.5 }}>
-        <path
-          d="M6 8L18 6L6 17H18"
-          stroke="#fff"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+      <svg viewBox="0 0 24 24" fill="none" style={{ width: size * 0.6, height: size * 0.6 }}>
+        <path d="M5 7H12M8 7V17" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M12 7H19L10 17H19" stroke="#7dd3fc" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );
