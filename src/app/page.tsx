@@ -10,6 +10,7 @@ import { RiskGuard } from "@/components/RiskGuard";
 import { PropTracker } from "@/components/PropTracker";
 import { propStatus } from "@/lib/prop";
 import { KillzoneClock } from "@/components/KillzoneClock";
+import { ShareButton } from "@/components/ShareButton";
 import { computeInsights } from "@/lib/insights";
 import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
 import {
@@ -174,6 +175,9 @@ export default async function DashboardPage({
           <p className="text-sm text-muted">
             {stats.closedCount} closed · {stats.openCount} open · {stats.tradeCount} total in view
           </p>
+          {!isDemo && stats.closedCount > 0 && (
+            <ShareButton href="/api/share/stats" filename="tradezone-stats.png" label="Share my stats" className="btn-ghost text-xs" />
+          )}
         </div>
       </div>
 

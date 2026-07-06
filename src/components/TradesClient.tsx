@@ -8,6 +8,7 @@ import { tradePnl } from "@/lib/pnl";
 import { killzone } from "@/lib/killzones";
 import { fmtMoney, fmtSignedMoney, fmtDateTime, fmtNum } from "@/lib/format";
 import { TradeFormModal } from "./TradeFormModal";
+import { ShareButton } from "./ShareButton";
 
 type AccountOption = { id: string; name: string; isCopy: boolean };
 
@@ -159,18 +160,26 @@ export function TradesClient({
                     {readOnly ? (
                       <span className="text-xs text-muted">—</span>
                     ) : (
-                      <>
+                      <div className="flex items-center justify-end gap-3">
+                        {t.exitPrice != null && (
+                          <ShareButton
+                            href={`/api/share/trade/${t.id}`}
+                            filename={`tradezone-${t.symbol}.png`}
+                            label="Share"
+                            className="text-xs text-accent hover:underline"
+                          />
+                        )}
                         <button className="text-xs text-accent hover:underline" onClick={() => setModal({ open: true, trade: t })}>
                           Edit
                         </button>
                         <button
-                          className="ml-3 text-xs text-loss hover:underline disabled:opacity-50"
+                          className="text-xs text-loss hover:underline disabled:opacity-50"
                           disabled={deleting === t.id}
                           onClick={() => remove(t)}
                         >
                           {deleting === t.id ? "…" : "Delete"}
                         </button>
-                      </>
+                      </div>
                     )}
                   </td>
                 </tr>
