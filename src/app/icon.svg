@@ -5,9 +5,16 @@
       <stop offset="0.55" stop-color="#2f6fd0"/>
       <stop offset="1" stop-color="#199e70"/>
     </linearGradient>
+    <radialGradient id="hl" cx="0.28" cy="0.2" r="0.6">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clip"><rect x="2" y="2" width="60" height="60" rx="16"/></clipPath>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g)"/>
-  <path d="M12 41h16" stroke="rgba(255,255,255,0.45)" stroke-width="4.2" stroke-linecap="round" stroke-dasharray="7 6"/>
-  <path d="M13 49L47 19" stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none"/>
-  <path d="M33 19h14v14" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <g clip-path="url(#clip)">
+    <rect x="2" y="2" width="60" height="60" fill="url(#g)"/>
+    <rect x="2" y="2" width="60" height="60" fill="url(#hl)"/>
+    <rect x="2" y="34" width="60" height="28" fill="#000" opacity="0.08"/>
+  </g>
+  <path d="M16 21L48 16L16 45h32" stroke="#fff" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>
