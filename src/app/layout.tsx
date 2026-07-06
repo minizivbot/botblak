@@ -27,6 +27,11 @@ export const metadata: Metadata = {
     description: "Log trades, sync your broker, and see exactly where your edge is.",
   },
   appleWebApp: { capable: true, title: "TradeZone", statusBarStyle: "black-translucent" },
+  // Google Search Console "HTML tag" verification: set GOOGLE_SITE_VERIFICATION
+  // in env vars to the content value Search Console gives you (no code change needed).
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 export const viewport: Viewport = {
