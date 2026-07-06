@@ -1,6 +1,7 @@
 /**
- * TradeZone mark: a gradient tile with two "zone" levels and a breakout
- * arrow punching through them — the ICT idea of price leaving the zone.
+ * TradeZone mark: a single bold breakout arrow crossing one resistance
+ * level, capped with a clean chevron — reads clearly from a 16px favicon
+ * up to a full share-card logo.
  */
 export function LogoMark({ size = 32 }: { size?: number }) {
   return (
@@ -9,13 +10,10 @@ export function LogoMark({ size = 32 }: { size?: number }) {
       style={{ width: size, height: size }}
       aria-hidden
     >
-      <svg viewBox="0 0 24 24" fill="none" style={{ width: size * 0.62, height: size * 0.62 }}>
-        {/* zone levels */}
-        <path d="M3.5 9.5h17" stroke="rgba(255,255,255,0.45)" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2.6 2.2" />
-        <path d="M3.5 15h17" stroke="rgba(255,255,255,0.45)" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2.6 2.2" />
-        {/* breakout arrow */}
-        <path d="M4.5 18.5l5-5.5 3.5 3L19 7.5" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M14.5 7h5v5" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+      <svg viewBox="0 0 24 24" fill="none" style={{ width: size * 0.66, height: size * 0.66 }}>
+        <path d="M4 15h6" stroke="rgba(255,255,255,0.45)" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="2.4 2.2" />
+        <path d="M4.5 18.5L17.5 7" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+        <path d="M12 7h5.5v5.5" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );

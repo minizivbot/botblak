@@ -26,7 +26,7 @@ export async function GET() {
     headlineTone: s.totalPnl >= 0 ? "profit" : "loss",
     stats: [
       { label: "Win rate", value: s.winRate == null ? "—" : fmtPct(s.winRate), tone: "ink" },
-      { label: "Profit factor", value: s.profitFactor == null ? "—" : s.profitFactor === Infinity ? "∞" : fmtNum(s.profitFactor), tone: "ink" },
+      { label: "Profit factor", value: s.profitFactor == null ? "—" : s.profitFactor === Infinity ? "Perfect" : fmtNum(s.profitFactor), tone: "ink" },
       { label: "Expectancy", value: s.expectancy == null ? "—" : fmtSignedMoney(s.expectancy, currency), tone: s.expectancy && s.expectancy >= 0 ? "profit" : "loss" },
     ],
     footnote: "My trading journal",

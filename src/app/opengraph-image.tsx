@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { BrandMark } from "@/lib/brandmark";
 
 export const runtime = "edge";
 export const alt = "TradeZone — Trading Journal";
@@ -23,22 +24,10 @@ export default function OgImage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 40 }}>
-          <div
-            style={{
-              width: 96,
-              height: 96,
-              borderRadius: 24,
-              background: "linear-gradient(135deg, #3987e5, #199e70)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 56,
-            }}
-          >
-            📈
-          </div>
-          <div style={{ fontSize: 64, fontWeight: 800, letterSpacing: -1 }}>
-            Trade<span style={{ color: "#4a94ec" }}>Zone</span>
+          <BrandMark size={96} />
+          <div style={{ display: "flex", fontSize: 64, fontWeight: 800, letterSpacing: -1 }}>
+            <span>Trade</span>
+            <span style={{ color: "#4a94ec" }}>Zone</span>
           </div>
         </div>
         <div style={{ fontSize: 44, fontWeight: 700, lineHeight: 1.2, maxWidth: 900 }}>

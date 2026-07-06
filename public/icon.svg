@@ -6,9 +6,8 @@
       <stop offset="1" stop-color="#199e70"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <path d="M96 208h320" stroke="rgba(255,255,255,0.45)" stroke-width="24" stroke-linecap="round" stroke-dasharray="46 40"/>
-  <path d="M96 320h320" stroke="rgba(255,255,255,0.45)" stroke-width="24" stroke-linecap="round" stroke-dasharray="46 40"/>
-  <path d="M112 392l104-112 72 64L392 176" stroke="#fff" stroke-width="42" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M304 160h96v96" stroke="#fff" stroke-width="42" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect width="512" height="512" rx="128" fill="url(#g)"/>
+  <path d="M96 328h128" stroke="rgba(255,255,255,0.45)" stroke-width="34" stroke-linecap="round" stroke-dasharray="56 48"/>
+  <path d="M104 392L376 152" stroke="#fff" stroke-width="56" stroke-linecap="round" fill="none"/>
+  <path d="M264 152h112v112" stroke="#fff" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>

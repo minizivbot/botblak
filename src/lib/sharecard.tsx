@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { SITE_HOST as SITE } from "@/lib/site";
+import { BrandMark } from "@/lib/brandmark";
 
 type Stat = { label: string; value: string; tone?: "profit" | "loss" | "ink" };
 
@@ -31,20 +32,7 @@ export function shareCard(opts: {
       >
         {/* Brand */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: 16,
-              background: "linear-gradient(135deg, #3987e5, #199e70)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 38,
-            }}
-          >
-            📈
-          </div>
+          <BrandMark size={64} />
           <div style={{ display: "flex", fontSize: 40, fontWeight: 800, letterSpacing: -1 }}>
             <span>Trade</span>
             <span style={{ color: "#4a94ec" }}>Zone</span>
