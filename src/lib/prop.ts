@@ -79,8 +79,13 @@ export function propStatus(cfg: PropConfig, trades: PropTrade[]): PropStatus {
       : null;
   const cushion = drawdownLine != null ? currentBalance - drawdownLine : null;
 
+  // Consistency (largest winning day as a share of total profit) only means
+  // something once you've traded several days — with one or two trading days a
+  // single day is trivially ~100% of profit, which isn't a real warning.
+  const MIN_DAYS_FOR_CONSISTENCY = 4;
   const bestDay = Math.max(0, ...[...dayPnl.values()]);
-  const bestDayShare = netProfit > 0 && bestDay > 0 ? bestDay / netProfit : null;
+  const bestDayShare =
+    dayPnl.size >= MIN_DAYS_FOR_CONSISTENCY && netProfit > 0 && bestDay > 0 ? bestDay / netProfit : null;
 
   return {
     enabled,
