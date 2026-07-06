@@ -4,8 +4,7 @@ import { Nav } from "@/components/Nav";
 import { getViewer } from "@/lib/viewer";
 import { getSiteConfig } from "@/lib/siteconfig";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://mytradezone.vercel.app";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

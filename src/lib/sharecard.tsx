@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
-
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://tradingjanrel.vercel.app").replace(/^https?:\/\//, "");
+import { SITE_HOST as SITE } from "@/lib/site";
 
 type Stat = { label: string; value: string; tone?: "profit" | "loss" | "ink" };
 
