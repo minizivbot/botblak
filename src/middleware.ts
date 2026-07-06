@@ -41,6 +41,11 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Protect everything except Next internals and static files with extensions.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|webp|gif|svg|ico)$).*)"],
+  // Protect everything except Next internals, crawler files (robots.txt,
+  // sitemap.xml, search-engine verification .html files), and static assets.
+  // These must be reachable by bots with no session cookie, so the auth
+  // redirect must never run for them.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|webp|gif|svg|ico|html|txt|xml|webmanifest)$).*)",
+  ],
 };
