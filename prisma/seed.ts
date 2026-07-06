@@ -251,6 +251,11 @@ async function main() {
     { name: "Tradeify", emoji: "⚡", blurb: "Futures funding with instant-funding options and straightforward consistency rules.", sortOrder: 4 },
     { name: "Topstep", emoji: "🏔️", blurb: "The veteran futures combine. Well-known Trading Combine → Express Funded path.", sortOrder: 5 },
     { name: "Bulenox", emoji: "🐂", blurb: "Futures evaluations with flexible reset options and regular discount codes.", sortOrder: 6 },
+    { name: "FundedNext", emoji: "🌟", blurb: "Large multi-asset prop firm expanding into futures, with frequent promos.", sortOrder: 7 },
+    { name: "Alpha Futures", emoji: "🅰️", blurb: "Newer futures firm with trader-friendly rules and consistent payouts.", sortOrder: 8 },
+    { name: "TradeDay", emoji: "📅", blurb: "Futures evaluations with real-data feeds and a straightforward funded path.", sortOrder: 9 },
+    { name: "Earn2Trade", emoji: "🎓", blurb: "Futures education + the Gauntlet Mini evaluation to a funded account.", sortOrder: 10 },
+    { name: "Legends Trading", emoji: "🏅", blurb: "Futures prop firm with flexible plans and frequent discount codes.", sortOrder: 11 },
   ];
   for (const f of firms) {
     const existing = await prisma.propFirm.findFirst({ where: { name: f.name } });
