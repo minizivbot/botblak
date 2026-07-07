@@ -4,6 +4,7 @@ import { Nav } from "@/components/Nav";
 import { getViewer } from "@/lib/viewer";
 import { getSiteConfig } from "@/lib/siteconfig";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
+        {!viewer.isDemo && <ServiceWorkerRegister />}
         {site.announcement && <AnnouncementBar text={site.announcement} level={site.announcementLevel} />}
         <div className="flex min-h-screen flex-col md:flex-row">
           <Nav username={viewer.username} authed={!viewer.isDemo} isAdmin={viewer.isAdmin} showLeaderboard={site.leaderboardEnabled} />

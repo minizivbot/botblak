@@ -22,6 +22,7 @@ model User {
   accounts     Account[]
   brokerConnections BrokerConnection[]
   uploads           Upload[]
+  pushSubscriptions PushSubscription[]
 }
 
 model BrokerConnection {
@@ -135,4 +136,14 @@ model PropFirm {
   emoji        String  @default("🏦")
   sortOrder    Int     @default(0)
   enabled      Boolean @default(true)
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }

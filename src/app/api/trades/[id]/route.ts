@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tradeSchema, zodMessage } from "@/lib/validation";
 import { requireUserId } from "@/lib/auth";
+import { checkTradeAlerts } from "@/lib/tradeAlerts";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -36,6 +37,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
       if (!owns) return NextResponse.json({ error: "Unknown trading account" }, { status: 400 });
     }
     const trade = await prisma.trade.update({ where: { id }, data: parsed.data });
+    if (trade.exitDate) await checkTradeAlerts(userId, trade.accountId);
     return NextResponse.json({ trade });
   } catch (e) {
     console.error("PUT /api/trades/[id] failed:", e);

@@ -46,6 +46,6 @@ export const config = {
   // These must be reachable by bots with no session cookie, so the auth
   // redirect must never run for them.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|webp|gif|svg|ico|html|txt|xml|webmanifest)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw.js|.*\\.(?:png|jpg|jpeg|webp|gif|svg|ico|html|txt|xml|webmanifest|js)$).*)",
   ],
 };

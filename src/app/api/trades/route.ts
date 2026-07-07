@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { parseFilters, filtersToWhere } from "@/lib/filters";
 import { tradeSchema, zodMessage } from "@/lib/validation";
 import { requireUserId } from "@/lib/auth";
+import { checkTradeAlerts } from "@/lib/tradeAlerts";
 
 export async function GET(req: NextRequest) {
   try {
@@ -36,6 +37,9 @@ export async function POST(req: NextRequest) {
       if (!owns) return NextResponse.json({ error: "Unknown trading account" }, { status: 400 });
     }
     const trade = await prisma.trade.create({ data: { ...parsed.data, source: "manual", userId } });
+    // Awaited (not fire-and-forget): serverless functions can freeze right
+    // after the response is sent, so background work must finish first.
+    if (trade.exitDate) await checkTradeAlerts(userId, trade.accountId);
     return NextResponse.json({ trade }, { status: 201 });
   } catch (e) {
     console.error("POST /api/trades failed:", e);

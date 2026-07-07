@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { PushToggle } from "./PushToggle";
 
 type Broker = { id: string; label: string; configured: boolean };
 function ProfileCard() {
@@ -197,6 +198,11 @@ export function SettingsClient() {
           {saving ? "Saving…" : "Save settings"}
         </button>
       </form>
+
+      <section className="card max-w-lg space-y-3">
+        <h2 className="text-base font-semibold">Notifications</h2>
+        <PushToggle />
+      </section>
 
       <section className="card max-w-lg space-y-2">
         <h2 className="text-base font-semibold">Trading accounts</h2>
