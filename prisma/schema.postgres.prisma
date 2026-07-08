@@ -18,6 +18,8 @@ model User {
   email        String?        @unique
   googleId     String?        @unique
   isAdmin      Boolean        @default(false)
+  plan         String         @default("free") // "free" | "pro"
+  proUntil     DateTime? // pro expires at this time; null = no expiry while plan is "pro"
   concepts     String? // JSON array of the user's personal concept list
   createdAt    DateTime       @default(now())
   trades       Trade[]
@@ -27,6 +29,7 @@ model User {
   brokerConnections BrokerConnection[]
   uploads           Upload[]
   pushSubscriptions PushSubscription[]
+  supportMessages   SupportMessage[]
 }
 
 model BrokerConnection {
@@ -140,6 +143,20 @@ model PropFirm {
   emoji        String  @default("🏦")
   sortOrder    Int     @default(0)
   enabled      Boolean @default(true)
+}
+
+// One support thread per user; messages from the user and admin replies interleave.
+model SupportMessage {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromAdmin   Boolean  @default(false)
+  body        String
+  seenByUser  Boolean  @default(false) // admin replies start unseen by the user
+  seenByAdmin Boolean  @default(false) // user messages start unseen by admins
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model PushSubscription {

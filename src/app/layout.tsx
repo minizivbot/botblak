@@ -5,6 +5,7 @@ import { getViewer } from "@/lib/viewer";
 import { getSiteConfig } from "@/lib/siteconfig";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { SupportWidget } from "@/components/SupportWidget";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -49,11 +50,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {!viewer.isDemo && <ServiceWorkerRegister />}
         {site.announcement && <AnnouncementBar text={site.announcement} level={site.announcementLevel} />}
         <div className="flex min-h-screen flex-col md:flex-row">
-          <Nav username={viewer.username} authed={!viewer.isDemo} isAdmin={viewer.isAdmin} showLeaderboard={site.leaderboardEnabled} />
+          <Nav
+            username={viewer.username}
+            authed={!viewer.isDemo}
+            isAdmin={viewer.isAdmin}
+            isPro={viewer.isPro}
+            showLeaderboard={site.leaderboardEnabled}
+          />
           <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">{children}</div>
           </main>
         </div>
+        {!viewer.isDemo && <SupportWidget />}
       </body>
     </html>
   );

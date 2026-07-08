@@ -68,12 +68,31 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M4 8l6-4 6 4M5 8v7h10V8M8 15v-3h4v3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  reports: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <rect x="3.5" y="3.5" width="13" height="13" rx="1.5" />
+      <path d="M6.5 13V9.5M10 13V7M13.5 13v-2.5" strokeLinecap="round" />
+    </svg>
+  ),
+  playbooks: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <path d="M4 4.5A1.5 1.5 0 015.5 3H15a1 1 0 011 1v10a1 1 0 01-1 1H5.5A1.5 1.5 0 004 16.5v-12z" strokeLinejoin="round" />
+      <path d="M4 16.5A1.5 1.5 0 015.5 15H16M7.5 7l2 2 3-3.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  pro: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <path d="M10 2.8l2.1 4.4 4.9.6-3.6 3.3.9 4.8L10 13.6l-4.3 2.3.9-4.8L3 7.8l4.9-.6L10 2.8z" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 const links = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
   { href: "/accounts", label: "Accounts", icon: "accounts" },
   { href: "/trades", label: "Trades", icon: "trades" },
+  { href: "/reports", label: "Edge Report", icon: "reports", pro: true },
+  { href: "/playbooks", label: "Playbooks", icon: "playbooks", pro: true },
   { href: "/journal", label: "Journal", icon: "journal" },
   { href: "/leaderboard", label: "Leaderboard", icon: "leaderboard" },
   { href: "/prop-firms", label: "Prop Firms", icon: "prop" },
@@ -87,11 +106,13 @@ export function Nav({
   username,
   authed,
   isAdmin = false,
+  isPro = false,
   showLeaderboard = true,
 }: {
   username: string | null;
   authed: boolean;
   isAdmin?: boolean;
+  isPro?: boolean;
   showLeaderboard?: boolean;
 }) {
   const pathname = usePathname();
@@ -107,7 +128,10 @@ export function Nav({
   if (pathname === "/login" || pathname === "/register") return null;
 
   const initial = (username?.[0] ?? "?").toUpperCase();
-  let navLinks = showLeaderboard ? links : links.filter((l) => l.href !== "/leaderboard");
+  let navLinks: { href: string; label: string; icon: string; pro?: boolean }[] = showLeaderboard
+    ? links
+    : links.filter((l) => l.href !== "/leaderboard");
+  if (!isPro) navLinks = [...navLinks, { href: "/pricing", label: "Go Pro", icon: "pro", pro: true }];
   if (isAdmin) navLinks = [...navLinks, { href: "/admin", label: "Admin", icon: "admin" }];
 
   const accountBox = authed ? (
@@ -117,7 +141,12 @@ export function Nav({
           {initial}
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-ink">{username}</p>
+          <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
+            {username}
+            {isPro && (
+              <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">PRO</span>
+            )}
+          </p>
           <button onClick={signOut} className="text-xs text-muted transition-colors hover:text-loss">
             Sign out
           </button>
@@ -158,6 +187,11 @@ export function Nav({
         {active && <span className="absolute top-1/2 left-0 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent" />}
         <span className={active ? "text-accent" : "text-muted"}>{icons[l.icon]}</span>
         {l.label}
+        {l.pro && !isPro && (
+          <span className="ml-auto rounded-full bg-gradient-to-r from-amber-500/20 to-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
+            PRO
+          </span>
+        )}
       </Link>
     );
   });

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
 import { zodMessage } from "@/lib/validation";
+import { FREE_ACCOUNT_LIMIT, isProUser } from "@/lib/plan";
 
 const accountSchema = z.object({
   name: z.string().trim().min(1, "Account name is required").max(40, "Name is too long"),
@@ -45,6 +46,15 @@ export async function POST(req: NextRequest) {
       where: { userId_name: { userId, name: parsed.data.name } },
     });
     if (exists) return NextResponse.json({ error: "You already have an account with that name" }, { status: 409 });
+
+    // Free plan: up to FREE_ACCOUNT_LIMIT accounts (existing extras are kept, just no new ones).
+    const count = await prisma.account.count({ where: { userId } });
+    if (count >= FREE_ACCOUNT_LIMIT && !(await isProUser(userId))) {
+      return NextResponse.json(
+        { error: `The free plan includes ${FREE_ACCOUNT_LIMIT} accounts — upgrade to Pro for unlimited accounts` },
+        { status: 403 },
+      );
+    }
 
     const account = await prisma.account.create({ data: { ...parsed.data, userId } });
     return NextResponse.json({ account }, { status: 201 });

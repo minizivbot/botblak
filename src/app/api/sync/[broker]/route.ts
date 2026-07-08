@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getBroker, BrokerError, brokers, type BrokerCredentials } from "@/lib/brokers";
 import { requireUserId } from "@/lib/auth";
 import { decryptJson } from "@/lib/secretbox";
+import { isProUser } from "@/lib/plan";
 
 /** GET: list available brokers and whether they're usable for this user. */
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ broker: string }> }) {
@@ -43,6 +44,10 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ broker: s
   const adapter = getBroker(broker);
   if (!adapter) {
     return NextResponse.json({ error: `Unknown broker "${broker}"` }, { status: 404 });
+  }
+
+  if (!(await isProUser(userId))) {
+    return NextResponse.json({ error: "Broker auto-sync is a Pro feature — see /pricing" }, { status: 403 });
   }
 
   try {

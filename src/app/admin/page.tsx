@@ -6,9 +6,11 @@ import { isUserAdmin } from "@/lib/admin";
 import { computeStats, type StatsTrade } from "@/lib/stats";
 import { fmtSignedMoney } from "@/lib/format";
 import { getSiteConfig } from "@/lib/siteconfig";
+import { planIsPro } from "@/lib/plan";
 import { AdminUserRow } from "@/components/AdminUserRow";
 import { AdminSiteControls } from "@/components/AdminSiteControls";
 import { AdminPropFirms } from "@/components/AdminPropFirms";
+import { AdminSupport } from "@/components/AdminSupport";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin" };
@@ -25,6 +27,8 @@ export default async function AdminPage() {
       username: true,
       email: true,
       isAdmin: true,
+      plan: true,
+      proUntil: true,
       createdAt: true,
       settings: { select: { showOnLeaderboard: true } },
       _count: { select: { trades: true, accounts: true } },
@@ -34,11 +38,14 @@ export default async function AdminPage() {
 
   const site = await getSiteConfig();
   const totalTrades = users.reduce((s, u) => s + u._count.trades, 0);
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const newThisWeek = users.filter((u) => u.createdAt > weekAgo).length;
   const rows = users.map((u) => ({
     id: u.id,
     username: u.username,
     email: u.email,
     isAdmin: u.isAdmin,
+    isPro: planIsPro(u),
     createdAt: u.createdAt.toISOString().slice(0, 10),
     tradeCount: u._count.trades,
     accountCount: u._count.accounts,
@@ -46,6 +53,7 @@ export default async function AdminPage() {
     onLeaderboard: u.settings?.showOnLeaderboard !== false,
     isSelf: u.id === userId,
   }));
+  const proCount = rows.filter((r) => r.isPro).length;
 
   return (
     <div className="space-y-4">
@@ -54,10 +62,18 @@ export default async function AdminPage() {
         <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-bold text-accent">restricted</span>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div className="card">
           <p className="text-xs text-muted">Users</p>
           <p className="text-2xl font-bold">{users.length}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-muted">New (7 days)</p>
+          <p className="text-2xl font-bold">{newThisWeek}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-muted">Pro users</p>
+          <p className="text-2xl font-bold text-amber-400">{proCount}</p>
         </div>
         <div className="card">
           <p className="text-xs text-muted">Total trades</p>
@@ -68,6 +84,8 @@ export default async function AdminPage() {
           <p className="text-2xl font-bold">{rows.filter((r) => r.onLeaderboard).length}</p>
         </div>
       </div>
+
+      <AdminSupport />
 
       <AdminSiteControls initial={site} />
 

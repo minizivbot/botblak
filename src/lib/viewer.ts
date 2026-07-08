@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { requireUserId } from "./auth";
 import { isUserAdmin } from "./admin";
+import { planIsPro } from "./plan";
 
 export type Viewer = {
   /** The user whose data to render — the signed-in user, or the demo user for guests. */
@@ -11,6 +12,8 @@ export type Viewer = {
   isDemo: boolean;
   /** True if the signed-in user is an admin. */
   isAdmin: boolean;
+  /** True if the signed-in user has Pro access (paid plan or admin). */
+  isPro: boolean;
 };
 
 /**
@@ -20,9 +23,19 @@ export type Viewer = {
 export async function getViewer(): Promise<Viewer> {
   const userId = await requireUserId();
   if (userId) {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
-    return { userId, username: user?.username ?? null, isDemo: false, isAdmin: await isUserAdmin(userId) };
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, plan: true, proUntil: true },
+    });
+    const isAdmin = await isUserAdmin(userId);
+    return {
+      userId,
+      username: user?.username ?? null,
+      isDemo: false,
+      isAdmin,
+      isPro: isAdmin || planIsPro(user),
+    };
   }
   const demo = await prisma.user.findUnique({ where: { username: "demo" }, select: { id: true } });
-  return { userId: demo?.id ?? null, username: null, isDemo: true, isAdmin: false };
+  return { userId: demo?.id ?? null, username: null, isDemo: true, isAdmin: false, isPro: false };
 }
