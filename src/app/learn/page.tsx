@@ -1,6 +1,9 @@
-import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { PLAYBOOKS } from "@/lib/playbooks";
+import { PlaybookCard } from "@/components/PlaybookCard";
 
 export const metadata = { title: "Learn" };
+export const dynamic = "force-dynamic";
 
 const STATS = [
   ["Win rate", "Out of your closed trades, how many made money. 55% means 55 winners per 100 trades. High win rate alone means nothing — a trader with 90% wins and huge losers still loses money."],
@@ -42,33 +45,73 @@ const SIZES = [
   ["CL", "Crude Oil", "$1,000 per $1", "1 CL → size 1000"],
 ] as const;
 
-export default function LearnPage() {
+export default async function LearnPage() {
+  const videos = await prisma.videoLesson.findMany({
+    where: { enabled: true },
+    orderBy: [{ category: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+  const videoCategories = [...new Set(videos.map((v) => v.category))];
+
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <div>
         <h1 className="text-xl font-semibold">Learn</h1>
         <p className="mt-1 text-sm text-muted">
-          Everything on this site, explained in plain language — the stats, the killzones, the concepts, and futures sizing.
+          The full ICT toolkit, free: complete setup playbooks with live checklists, video lessons, the stats, the
+          killzones, the concepts, and futures sizing.
         </p>
       </div>
 
-      <Link
-        href="/playbooks"
-        className="card flex items-center gap-4 border-amber-400/30 transition-colors hover:border-amber-400/60"
-      >
-        <span className="text-3xl">📚</span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2 font-semibold text-ink">
-            ICT Playbooks
-            <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">PRO</span>
-          </span>
-          <span className="block text-sm text-ink-2">
-            Six complete setups — Silver Bullet, OTE, Judas Swing, FVG, Turtle Soup, Power of 3 — each with a live
-            entry checklist you run during the session, plus curated video lessons.
-          </span>
-        </span>
-        <span className="text-muted">→</span>
-      </Link>
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-base font-semibold">Setup playbooks 📚</h2>
+          <p className="text-xs text-muted">
+            Open one during the session and check the boxes live — all green means A+ setup, anything missing means no
+            trade. Tag the setup on your trades and the dashboard shows which one actually pays you.
+          </p>
+        </div>
+        {PLAYBOOKS.map((pb) => (
+          <PlaybookCard key={pb.id} pb={pb} />
+        ))}
+      </section>
+
+      {videos.length > 0 && (
+        <section className="space-y-4 pt-2">
+          <div>
+            <h2 className="text-base font-semibold">Video lessons 🎬</h2>
+            <p className="text-xs text-muted">
+              Hand-picked lessons on the concepts above. Watch one, then run its playbook checklist next session.
+            </p>
+          </div>
+          {videoCategories.map((cat) => (
+            <div key={cat} className="space-y-2">
+              <h3 className="text-xs font-bold tracking-wide text-muted uppercase">{cat}</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {videos
+                  .filter((v) => v.category === cat)
+                  .map((v) => (
+                    <div key={v.id} className="card space-y-2 p-3">
+                      <div className="aspect-video overflow-hidden rounded-lg bg-black">
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${v.youtubeId}`}
+                          title={v.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          loading="lazy"
+                          className="h-full w-full"
+                        />
+                      </div>
+                      <p className="text-sm font-medium text-ink">
+                        {v.title}
+                        {v.minutes ? <span className="ml-1.5 text-xs font-normal text-muted">· {v.minutes} min</span> : null}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       <section className="card">
         <h2 className="card-title">How TradeZone works — 3 steps</h2>

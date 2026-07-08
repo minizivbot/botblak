@@ -78,7 +78,7 @@ export function AdminVideos() {
       setUrl("");
       setTitle("");
       setMinutes("");
-      setMsg("Added — live for Pro users on the Playbooks page.");
+      setMsg("Added — live on the Learn page.");
       load();
     } else {
       const b = await res?.json().catch(() => ({}));
@@ -104,10 +104,10 @@ export function AdminVideos() {
   return (
     <section className="card max-w-2xl space-y-4">
       <div>
-        <h2 className="text-base font-semibold">Video lessons (Pro) 🎬</h2>
+        <h2 className="text-base font-semibold">Video lessons 🎬</h2>
         <p className="text-sm text-muted">
-          Paste a YouTube link and it appears in the Pro lesson library on the Playbooks page — embedded via the
-          official player, so the creator keeps the views.
+          Paste a YouTube link and it appears in the lesson library on the Learn page — embedded via the official
+          player, so the creator keeps the views.
         </p>
       </div>
 

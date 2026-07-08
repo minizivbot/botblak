@@ -17,12 +17,6 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M6 4v12M6 4L3.5 6.5M6 4l2.5 2.5M14 16V4M14 16l-2.5-2.5M14 16l2.5-2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
-  import: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
-      <path d="M10 3v9M10 12l-3-3M10 12l3-3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 14v2a1 1 0 001 1h10a1 1 0 001-1v-2" strokeLinecap="round" />
-    </svg>
-  ),
   settings: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
       <circle cx="10" cy="10" r="2.5" />
@@ -68,12 +62,6 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M4 8l6-4 6 4M5 8v7h10V8M8 15v-3h4v3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
-  playbooks: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
-      <path d="M4 4.5A1.5 1.5 0 015.5 3H15a1 1 0 011 1v10a1 1 0 01-1 1H5.5A1.5 1.5 0 004 16.5v-12z" strokeLinejoin="round" />
-      <path d="M4 16.5A1.5 1.5 0 015.5 15H16M7.5 7l2 2 3-3.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
   pro: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
       <path d="M10 2.8l2.1 4.4 4.9.6-3.6 3.3.9 4.8L10 13.6l-4.3 2.3.9-4.8L3 7.8l4.9-.6L10 2.8z" strokeLinejoin="round" />
@@ -87,11 +75,9 @@ const links = [
   { href: "/accounts", label: "Accounts", icon: "accounts" },
   { href: "/trades", label: "Trades", icon: "trades" },
   { href: "/achievements", label: "Achievements", icon: "trophy" },
-  { href: "/playbooks", label: "Playbooks", icon: "playbooks", pro: true },
   { href: "/prop-firms", label: "Prop Firms", icon: "prop" },
   { href: "/motivation", label: "Daily Motivation", icon: "motivation" },
   { href: "/learn", label: "Learn", icon: "learn" },
-  { href: "/import", label: "Import & Sync", icon: "import" },
 ];
 
 export function Nav({

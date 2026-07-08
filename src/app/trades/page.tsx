@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getViewer } from "@/lib/viewer";
@@ -46,7 +47,12 @@ export default async function TradesPage({
   return (
     <div className="space-y-4">
       {isDemo && <DemoBanner />}
-      <h1 className="text-xl font-semibold">Trades</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold">Trades</h1>
+        <Link href="/import" className="btn-ghost text-xs">
+          ⇪ Import & Sync
+        </Link>
+      </div>
       <AccountSwitcher accounts={accounts} />
       <FilterBar
         symbols={symbolRows.map((r) => r.symbol)}

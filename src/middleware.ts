@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ["/login", "/register", "/privacy", "/terms"];
 
 // Pages a logged-out visitor may browse as a live demo (read-only). Everything
 // else (journal, import, settings, all mutating APIs) still requires sign-in.
-const GUEST_PAGES = ["/", "/accounts", "/trades", "/calendar", "/achievements", "/learn", "/motivation", "/prop-firms", "/pricing", "/opengraph-image"];
+const GUEST_PAGES = ["/", "/accounts", "/trades", "/calendar", "/achievements", "/learn", "/playbooks", "/motivation", "/prop-firms", "/pricing", "/opengraph-image"];
 
 /** Baseline security headers applied to every response. */
 function withSecurityHeaders(res: NextResponse): NextResponse {
@@ -21,7 +21,9 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const allow = () => withSecurityHeaders(NextResponse.next());
 
-  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/api/auth/")) {
+  // Auth endpoints + Vercel cron endpoints (crons carry no session; the
+  // routes themselves verify the CRON_SECRET / vercel-cron caller).
+  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/api/auth/") || pathname.startsWith("/api/cron/")) {
     return allow();
   }
 

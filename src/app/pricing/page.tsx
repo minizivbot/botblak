@@ -12,21 +12,21 @@ const FREE_FEATURES = [
   "Unlimited trades",
   "2 trading accounts",
   "Dashboard stats, killzones & insights",
+  "P&L calendar with red-folder news days",
+  "Morning red-folder push + weekly recap push",
+  "6 ICT playbooks + video lessons (Learn)",
   "Achievements & green-day streaks",
-  "CSV import & export",
-  "Prop-firm challenge tracker",
-  "Push notifications & risk guard",
-  "Shareable stat cards",
+  "Prop-firm challenge tracker & risk guard",
+  "CSV import & export, shareable stat cards",
 ];
 
 const PRO_FEATURES = [
   "Everything in Free",
-  "6 ICT Playbooks — Silver Bullet, OTE, Judas Swing & more, with live entry checklists",
-  "Curated ICT video-lesson library, organized by concept",
-  "Custom app themes — gold, violet, emerald & more",
   "Unlimited trading accounts",
   "Broker auto-sync (Tradovate, Alpaca)",
-  "Priority support",
+  "Custom app themes — gold, violet, emerald & more",
+  "Priority support — your requests jump the queue",
+  "Early access to every new feature",
 ];
 
 function Check({ dim = false }: { dim?: boolean }) {
