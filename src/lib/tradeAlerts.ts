@@ -3,12 +3,13 @@ import { propStatus } from "./prop";
 import { closedTrades, type StatsTrade } from "./stats";
 import { sendPushToUser } from "./push";
 import { fmtSignedMoney, fmtMoney } from "./format";
+import { computeAchievements, unlockedIds } from "./achievements";
 
 /**
  * Fire push notifications for side effects of saving a closed trade: a prop
- * account newly passing its challenge, or today's realized loss newly
- * crossing the daily loss limit. Best-effort — never throws, so a push
- * failure can't block saving the trade itself.
+ * account newly passing its challenge, today's realized loss newly crossing
+ * the daily loss limit, or a new achievement unlocking. Best-effort — never
+ * throws, so a push failure can't block saving the trade itself.
  */
 export async function checkTradeAlerts(userId: string, accountId: string | null): Promise<void> {
   try {
@@ -42,6 +43,40 @@ export async function checkTradeAlerts(userId: string, accountId: string | null)
         await sendPushToUser(userId, {
           title: "🛑 Daily loss limit hit",
           body: `Today: ${fmtSignedMoney(total, settings.currency)} — your limit is ${fmtMoney(limit, settings.currency)}. Time to stop.`,
+          url: "/",
+        });
+      }
+    }
+
+    // New achievements: compare against the stored unlocked set, push the
+    // fresh ones, then persist so each badge only ever notifies once.
+    const [trades, accounts] = await Promise.all([
+      prisma.trade.findMany({ where: { userId } }),
+      prisma.account.findMany({ where: { userId }, select: { propFunded: true } }),
+    ]);
+    const list = computeAchievements({
+      trades: trades as StatsTrade[],
+      anyFunded: accounts.some((a) => a.propFunded),
+      hasLossLimit: settings?.maxDailyLoss != null,
+    });
+    const nowUnlocked = unlockedIds(list);
+    let seen: string[] = [];
+    try {
+      seen = JSON.parse(settings?.achievements || "[]");
+    } catch {
+      /* corrupted json — treat as none seen */
+    }
+    const fresh = list.filter((a) => a.unlocked && !seen.includes(a.id));
+    if (fresh.length > 0) {
+      await prisma.settings.upsert({
+        where: { userId },
+        update: { achievements: JSON.stringify(nowUnlocked) },
+        create: { userId, achievements: JSON.stringify(nowUnlocked) },
+      });
+      for (const a of fresh.slice(0, 3)) {
+        await sendPushToUser(userId, {
+          title: `${a.emoji} Achievement unlocked: ${a.name}`,
+          body: a.desc,
           url: "/",
         });
       }

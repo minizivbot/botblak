@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { settingsSchema, zodMessage } from "@/lib/validation";
 import { brokers } from "@/lib/brokers";
 import { requireUserId } from "@/lib/auth";
+import { isProUser } from "@/lib/plan";
 
 export async function GET() {
   try {
@@ -42,10 +43,13 @@ export async function PUT(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: zodMessage(parsed.error) }, { status: 400 });
     }
+    const data = { ...parsed.data };
+    // Themes are a Pro perk — silently keep the default for free accounts.
+    if (data.accent && !(await isProUser(userId))) delete data.accent;
     const settings = await prisma.settings.upsert({
       where: { userId },
-      update: parsed.data,
-      create: { userId, ...parsed.data },
+      update: data,
+      create: { userId, ...data },
     });
     return NextResponse.json({ settings });
   } catch (e) {

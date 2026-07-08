@@ -17,12 +17,6 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M6 4v12M6 4L3.5 6.5M6 4l2.5 2.5M14 16V4M14 16l-2.5-2.5M14 16l2.5-2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
-  journal: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
-      <path d="M5 3h9a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
-      <path d="M7.5 7h5M7.5 10h5M7.5 13h3" strokeLinecap="round" />
-    </svg>
-  ),
   import: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
       <path d="M10 3v9M10 12l-3-3M10 12l3-3" strokeLinecap="round" strokeLinejoin="round" />
@@ -46,12 +40,6 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M10 4.5v13" strokeLinecap="round" />
     </svg>
   ),
-  today: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
-      <circle cx="10" cy="10.5" r="6" />
-      <path d="M10 7.5v3l2 1.5M7.5 2.5h5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
   accounts: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
       <rect x="3" y="5" width="14" height="11" rx="2" />
@@ -69,12 +57,6 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M4 8l6-4 6 4M5 8v7h10V8M8 15v-3h4v3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
-  reports: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
-      <rect x="3.5" y="3.5" width="13" height="13" rx="1.5" />
-      <path d="M6.5 13V9.5M10 13V7M13.5 13v-2.5" strokeLinecap="round" />
-    </svg>
-  ),
   playbooks: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
       <path d="M4 4.5A1.5 1.5 0 015.5 3H15a1 1 0 011 1v10a1 1 0 01-1 1H5.5A1.5 1.5 0 004 16.5v-12z" strokeLinejoin="round" />
@@ -90,11 +72,9 @@ const icons: Record<string, React.ReactNode> = {
 
 const links = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
-  { href: "/today", label: "Today", icon: "today", pro: true },
   { href: "/accounts", label: "Accounts", icon: "accounts" },
   { href: "/trades", label: "Trades", icon: "trades" },
-  { href: "/journal", label: "Journal", icon: "journal" },
-  { href: "/reports", label: "Edge Report", icon: "reports", pro: true },
+  { href: "/playbooks", label: "Playbooks", icon: "playbooks", pro: true },
   { href: "/prop-firms", label: "Prop Firms", icon: "prop" },
   { href: "/motivation", label: "Daily Motivation", icon: "motivation" },
   { href: "/learn", label: "Learn", icon: "learn" },

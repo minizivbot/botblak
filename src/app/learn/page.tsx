@@ -76,7 +76,7 @@ export default function LearnPage() {
           {[
             ["Log every trade", "Add trades manually (the time is stamped for you), import a CSV, or connect your broker on Import & Sync. Tag the setup and the concepts you used."],
             ["Review the dashboard", "Filter by account, date, symbol, setup, direction, or killzone — and see exactly where your money comes from and where it leaks."],
-            ["Journal the day", "Rate your mood and discipline, write the lesson. The pattern you keep repeating is sitting in that journal — read it weekly."],
+            ["Collect achievements", "Green-day streaks, discipline badges, the Funded trophy — the dashboard tracks them automatically. Keep the streak alive."],
           ].map(([t, d], i) => (
             <li key={t} className="flex gap-3">
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-sm font-bold text-accent">

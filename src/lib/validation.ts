@@ -30,14 +30,6 @@ export const tradeSchema = z
     path: ["exitPrice"],
   });
 
-export const journalSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
-  mood: z.coerce.number().int().min(1).max(5),
-  discipline: z.coerce.number().int().min(1).max(5),
-  notes: z.string().trim().max(10000).nullish().transform((s) => s || null),
-  lessons: z.string().trim().max(10000).nullish().transform((s) => s || null),
-});
-
 export const settingsSchema = z.object({
   startingBalance: z.coerce.number().min(0, "Starting balance cannot be negative"),
   currency: z
@@ -50,6 +42,11 @@ export const settingsSchema = z.object({
     .optional()
     .transform((v) => (typeof v === "number" ? v : null)),
   showOnLeaderboard: z.boolean().optional(),
+  // Pro theme accent; empty string / null clears back to the default blue.
+  accent: z
+    .union([z.enum(["gold", "violet", "emerald", "rose", "ice"]), z.literal(""), z.null()])
+    .optional()
+    .transform((v) => (v === "" ? null : v)),
 });
 
 export const usernameSchema = z.object({

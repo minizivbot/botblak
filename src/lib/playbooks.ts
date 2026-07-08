@@ -53,7 +53,7 @@ export const PLAYBOOKS: Playbook[] = [
       "Moving the stop 'a bit wider' — the sweep extreme is the line between a setup and a guess",
     ],
     proTip:
-      "Journal each Silver Bullet with the concept tag 'Silver Bullet' and check your Edge Report after 20 trades — most traders discover one window (AM or PM) massively outperforms the other for them.",
+      "Tag each of these trades 'Silver Bullet' and check P&L by setup on the dashboard after 20 trades — most traders discover one window (AM or PM) massively outperforms the other for them.",
   },
   {
     id: "ote",
@@ -88,7 +88,7 @@ export const PLAYBOOKS: Playbook[] = [
       "Taking OTEs against the higher-timeframe draw on liquidity — deep entry into a losing direction is still losing",
     ],
     proTip:
-      "Tag these trades 'OTE' and compare your win rate on OTEs WITH an overlapping FVG vs without in the Edge Report — the confluence version usually doubles the expectancy.",
+      "Tag these trades 'OTE' and compare your results WITH an overlapping FVG vs without on the dashboard — the confluence version usually doubles the expectancy.",
   },
   {
     id: "judas-swing",
@@ -158,7 +158,7 @@ export const PLAYBOOKS: Playbook[] = [
       "Ignoring the higher-timeframe draw — a 5m FVG long into a 1h bearish order block is a coin toss",
     ],
     proTip:
-      "In your journal, tag whether the gap held at its edge or at consequent encroachment. After 20 trades your Edge Report tells you exactly which fill style your market prefers — then quote only that price.",
+      "In your trade notes, mark whether the gap held at its edge or at consequent encroachment. After 20 trades you'll know exactly which fill style your market prefers — then quote only that price.",
   },
   {
     id: "turtle-soup",
@@ -193,7 +193,7 @@ export const PLAYBOOKS: Playbook[] = [
       "Skipping the structure shift 'because the wick was big' — size of the wick isn't confirmation",
     ],
     proTip:
-      "Track the 'sweep vs breakout' stat per symbol in your journal. Indices love turtle soup; crude oil breaks and runs. Your Edge Report will show which market respects your fades.",
+      "Track the 'sweep vs breakout' stat per symbol in your trade notes. Indices love turtle soup; crude oil breaks and runs — the dashboard's P&L by symbol will show which market respects your fades.",
   },
   {
     id: "power-of-3",

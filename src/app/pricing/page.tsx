@@ -9,9 +9,10 @@ export const metadata = {
 };
 
 const FREE_FEATURES = [
-  "Unlimited trades & journal entries",
+  "Unlimited trades",
   "2 trading accounts",
   "Dashboard stats, killzones & insights",
+  "Achievements & green-day streaks",
   "CSV import & export",
   "Prop-firm challenge tracker",
   "Push notifications & risk guard",
@@ -20,14 +21,11 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   "Everything in Free",
-  "Today — live killzone clock, pre-market plan, trade cap & loss-limit meter, position-size calculator",
-  "Edge Report — finds your leaks with a dollar amount attached (overtrading, revenge trades, worst day/symbol)",
-  "What-If Simulator — your real history replayed under discipline rules",
   "6 ICT Playbooks — Silver Bullet, OTE, Judas Swing & more, with live entry checklists",
   "Curated ICT video-lesson library, organized by concept",
+  "Custom app themes — gold, violet, emerald & more",
   "Unlimited trading accounts",
   "Broker auto-sync (Tradovate, Alpaca)",
-  "Export reports to PDF",
   "Priority support",
 ];
 

@@ -7,6 +7,8 @@ import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { SupportWidget } from "@/components/SupportWidget";
 import { SITE_URL } from "@/lib/site";
+import { prisma } from "@/lib/prisma";
+import { accentStyle } from "@/lib/themes";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -44,9 +46,15 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [viewer, site] = await Promise.all([getViewer(), getSiteConfig()]);
+  // Pro perk: a custom accent theme, applied site-wide via CSS variables.
+  let accent: string | null = null;
+  if (!viewer.isDemo && viewer.isPro && viewer.userId) {
+    const s = await prisma.settings.findUnique({ where: { userId: viewer.userId }, select: { accent: true } });
+    accent = s?.accent ?? null;
+  }
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased" style={accentStyle(accent)}>
         {!viewer.isDemo && <ServiceWorkerRegister />}
         {site.announcement && <AnnouncementBar text={site.announcement} level={site.announcementLevel} />}
         <div className="flex min-h-screen flex-col md:flex-row">

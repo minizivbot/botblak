@@ -74,11 +74,13 @@ function ProfileCard() {
   );
 }
 
-export function SettingsClient() {
+export function SettingsClient({ isPro = false }: { isPro?: boolean }) {
+  const router = useRouter();
   const [startingBalance, setStartingBalance] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [maxDailyLoss, setMaxDailyLoss] = useState("");
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
+  const [accent, setAccent] = useState<string | null>(null);
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -92,6 +94,7 @@ export function SettingsClient() {
         setCurrency(b.settings?.currency ?? "USD");
         setMaxDailyLoss(b.settings?.maxDailyLoss != null ? String(b.settings.maxDailyLoss) : "");
         setShowOnLeaderboard(b.settings?.showOnLeaderboard !== false);
+        setAccent(b.settings?.accent ?? null);
         setBrokers(b.brokers ?? []);
         setLoaded(true);
       })
@@ -114,17 +117,44 @@ export function SettingsClient() {
           currency,
           maxDailyLoss: maxDailyLoss.trim() === "" ? null : Number(maxDailyLoss),
           showOnLeaderboard,
+          accent,
         }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "Failed to save settings");
       setMessage({ ok: true, text: "Settings saved." });
+      router.refresh(); // re-render the layout so a new theme applies immediately
     } catch (err) {
       setMessage({ ok: false, text: err instanceof Error ? err.message : "Failed to save settings" });
     } finally {
       setSaving(false);
     }
   }
+
+  async function saveAccent(id: string | null) {
+    setAccent(id);
+    await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        startingBalance: Number(startingBalance) || 10000,
+        currency,
+        maxDailyLoss: maxDailyLoss.trim() === "" ? null : Number(maxDailyLoss),
+        showOnLeaderboard,
+        accent: id,
+      }),
+    }).catch(() => null);
+    router.refresh(); // repaint the app with the new accent right away
+  }
+
+  const THEMES: { id: string | null; label: string; color: string }[] = [
+    { id: null, label: "Classic Blue", color: "#3987e5" },
+    { id: "gold", label: "Gold", color: "#e5b53a" },
+    { id: "violet", label: "Violet", color: "#8b5cf6" },
+    { id: "emerald", label: "Emerald", color: "#10b981" },
+    { id: "rose", label: "Rose", color: "#f43f5e" },
+    { id: "ice", label: "Ice", color: "#22d3ee" },
+  ];
 
   return (
     <div className="space-y-4">
@@ -200,6 +230,41 @@ export function SettingsClient() {
           {saving ? "Saving…" : "Save settings"}
         </button>
       </form>
+
+      <section className="card max-w-lg space-y-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
+          Theme
+          <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">PRO</span>
+        </h2>
+        <p className="text-sm text-muted">
+          {isPro
+            ? "Pick your accent color — it repaints the whole app instantly. Hits different in gold."
+            : "Pro members repaint the whole app in their color. Upgrade to unlock."}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {THEMES.map((t) => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => isPro && saveAccent(t.id)}
+              disabled={!isPro || !loaded}
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                accent === t.id && isPro
+                  ? "border-accent bg-accent/15 text-ink"
+                  : "border-edge text-muted hover:text-ink-2"
+              } ${!isPro ? "cursor-not-allowed opacity-50" : ""}`}
+            >
+              <span className="h-3.5 w-3.5 rounded-full" style={{ background: t.color }} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {!isPro && (
+          <Link href="/pricing" className="inline-block text-xs text-accent hover:underline">
+            See Pro plans →
+          </Link>
+        )}
+      </section>
 
       <section className="card max-w-lg space-y-3">
         <h2 className="text-base font-semibold">Notifications</h2>

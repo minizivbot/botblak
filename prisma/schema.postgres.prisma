@@ -114,7 +114,9 @@ model Settings {
   startingBalance Float  @default(10000)
   currency        String @default("USD")
   maxDailyLoss    Float? // risk guard: stop-trading alert when today's losses reach this
-  showOnLeaderboard Boolean @default(true) // opt out of the public leaderboard
+  showOnLeaderboard Boolean @default(true) // public-profile opt-out (legacy column name)
+  achievements    String? // JSON array of unlocked achievement ids (so we only push once per badge)
+  accent          String? // Pro theme: accent color id ("gold", "violet", ...); null = default blue
 }
 
 model SiteConfig {

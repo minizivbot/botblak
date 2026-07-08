@@ -81,8 +81,12 @@ body::after {
   @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50;
 }
 .btn-primary {
-  @apply text-white shadow-[0_2px_14px_rgba(57,135,229,0.4)] hover:shadow-[0_4px_20px_rgba(57,135,229,0.55)];
-  background: linear-gradient(135deg, #4a94ec, #2a6fc7 60%, #1c5cab);
+  /* Follows the accent variables so Pro themes repaint buttons too. */
+  @apply text-white shadow-[0_2px_14px_rgba(0,0,0,0.35)];
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-deep));
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
 }
 .btn-ghost {
   @apply border border-edge bg-transparent text-ink-2 hover:border-edge-strong hover:bg-raised hover:text-ink;
