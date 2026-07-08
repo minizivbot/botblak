@@ -11,6 +11,7 @@ import { AdminUserRow } from "@/components/AdminUserRow";
 import { AdminSiteControls } from "@/components/AdminSiteControls";
 import { AdminPropFirms } from "@/components/AdminPropFirms";
 import { AdminSupport } from "@/components/AdminSupport";
+import { AdminVideos } from "@/components/AdminVideos";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin" };
@@ -82,6 +83,8 @@ export default async function AdminPage() {
       <AdminSupport />
 
       <AdminSiteControls initial={site} />
+
+      <AdminVideos />
 
       <AdminPropFirms />
 

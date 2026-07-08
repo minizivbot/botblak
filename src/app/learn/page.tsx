@@ -64,7 +64,7 @@ export default function LearnPage() {
           </span>
           <span className="block text-sm text-ink-2">
             Six complete setups — Silver Bullet, OTE, Judas Swing, FVG, Turtle Soup, Power of 3 — each with a live
-            entry checklist you run during the session.
+            entry checklist you run during the session, plus curated video lessons.
           </span>
         </span>
         <span className="text-muted">→</span>

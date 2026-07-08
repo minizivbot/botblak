@@ -24,6 +24,7 @@ const PRO_FEATURES = [
   "Edge Report — finds your leaks with a dollar amount attached (overtrading, revenge trades, worst day/symbol)",
   "What-If Simulator — your real history replayed under discipline rules",
   "6 ICT Playbooks — Silver Bullet, OTE, Judas Swing & more, with live entry checklists",
+  "Curated ICT video-lesson library, organized by concept",
   "Unlimited trading accounts",
   "Broker auto-sync (Tradovate, Alpaca)",
   "Export reports to PDF",

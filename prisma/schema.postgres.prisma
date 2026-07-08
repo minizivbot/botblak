@@ -152,6 +152,19 @@ model Upload {
   createdAt DateTime @default(now())
 }
 
+// Curated YouTube lessons shown to Pro users on the Playbooks page.
+// Embedded via the official YouTube player — never re-uploaded copies.
+model VideoLesson {
+  id        String   @id @default(cuid())
+  title     String
+  youtubeId String
+  category  String   @default("General") // e.g. "Silver Bullet", "FVG", "Market Structure"
+  minutes   Int? // approximate length, shown on the card
+  sortOrder Int      @default(0)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
 model PropFirm {
   id           String  @id @default(cuid())
   name         String
