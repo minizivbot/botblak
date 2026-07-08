@@ -46,6 +46,17 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M3 8.5h14M6.5 12.5h3" strokeLinecap="round" />
     </svg>
   ),
+  calendar: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <rect x="3" y="4.5" width="14" height="12" rx="2" />
+      <path d="M3 8h14M7 2.5v3M13 2.5v3M6.5 11h2M11.5 11h2M6.5 13.8h2" strokeLinecap="round" />
+    </svg>
+  ),
+  trophy: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <path d="M7 16.5h6M10 13.5v3M5.5 3.5h9v4a4.5 4.5 0 01-9 0v-4zM5.5 5.5H3.5v1A2.5 2.5 0 006 9M14.5 5.5h2v1A2.5 2.5 0 0114 9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   admin: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
       <path d="M10 2.5l6 2.5v4c0 3.5-2.5 6.3-6 7.5-3.5-1.2-6-4-6-7.5V5l6-2.5z" strokeLinejoin="round" />
@@ -72,8 +83,10 @@ const icons: Record<string, React.ReactNode> = {
 
 const links = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
+  { href: "/calendar", label: "Calendar", icon: "calendar" },
   { href: "/accounts", label: "Accounts", icon: "accounts" },
   { href: "/trades", label: "Trades", icon: "trades" },
+  { href: "/achievements", label: "Achievements", icon: "trophy" },
   { href: "/playbooks", label: "Playbooks", icon: "playbooks", pro: true },
   { href: "/prop-firms", label: "Prop Firms", icon: "prop" },
   { href: "/motivation", label: "Daily Motivation", icon: "motivation" },

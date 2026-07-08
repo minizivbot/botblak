@@ -154,6 +154,21 @@ model Upload {
   createdAt DateTime @default(now())
 }
 
+// High-impact ("red folder") economic-calendar events, synced from the
+// ForexFactory weekly JSON feed and accumulated so past months keep their icons.
+model NewsEvent {
+  id        String   @id @default(cuid())
+  date      String // "YYYY-MM-DD" in New York time
+  time      String // "HH:MM" ET ("" for all-day)
+  title     String
+  currency  String // "USD", "EUR", ...
+  impact    String   @default("High")
+  createdAt DateTime @default(now())
+
+  @@unique([date, time, title])
+  @@index([date])
+}
+
 // Curated YouTube lessons shown to Pro users on the Playbooks page.
 // Embedded via the official YouTube player — never re-uploaded copies.
 model VideoLesson {

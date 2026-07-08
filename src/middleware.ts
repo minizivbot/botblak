@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ["/login", "/register", "/privacy", "/terms"];
 
 // Pages a logged-out visitor may browse as a live demo (read-only). Everything
 // else (journal, import, settings, all mutating APIs) still requires sign-in.
-const GUEST_PAGES = ["/", "/accounts", "/trades", "/learn", "/motivation", "/prop-firms", "/pricing", "/opengraph-image"];
+const GUEST_PAGES = ["/", "/accounts", "/trades", "/calendar", "/achievements", "/learn", "/motivation", "/prop-firms", "/pricing", "/opengraph-image"];
 
 /** Baseline security headers applied to every response. */
 function withSecurityHeaders(res: NextResponse): NextResponse {

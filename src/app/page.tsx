@@ -12,8 +12,6 @@ import { propStatus } from "@/lib/prop";
 import { KillzoneClock } from "@/components/KillzoneClock";
 import { ShareButton } from "@/components/ShareButton";
 import { computeInsights } from "@/lib/insights";
-import { computeAchievements } from "@/lib/achievements";
-import { AchievementsRow } from "@/components/AchievementsRow";
 import { parseFilters, filtersToWhere, applyKillzoneFilter, accountWhere } from "@/lib/filters";
 import {
   computeStats,
@@ -141,15 +139,6 @@ export default async function DashboardPage({
   const todayPnl = todayTrades.reduce((s, t) => s + t.pnl, 0);
   const insights = computeInsights(trades, currency);
 
-  // Achievements always run on the FULL history — badges don't un-earn
-  // themselves because a filter is active.
-  const allTrades = await prisma.trade.findMany({ where: { userId } });
-  const achievements = computeAchievements({
-    trades: allTrades,
-    anyFunded: accountsFull.some((a) => a.propFunded),
-    hasLossLimit: settings?.maxDailyLoss != null,
-  });
-
   const tone = (v: number | null | undefined) =>
     v == null || v === 0 ? ("neutral" as const) : v > 0 ? ("positive" as const) : ("negative" as const);
 
@@ -215,8 +204,6 @@ export default async function DashboardPage({
         symbols={symbolRows.map((r) => r.symbol)}
         strategies={strategyRows.map((r) => r.strategy!).sort()}
       />
-
-      <AchievementsRow list={achievements} />
 
       {insights.length > 0 && (
         <section className="card !border-accent/30">
