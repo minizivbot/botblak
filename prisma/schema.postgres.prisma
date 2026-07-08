@@ -30,6 +30,7 @@ model User {
   uploads           Upload[]
   pushSubscriptions PushSubscription[]
   supportMessages   SupportMessage[]
+  dayPlans          DayPlan[]
 }
 
 model BrokerConnection {
@@ -121,8 +122,25 @@ model SiteConfig {
   announcement       String? // site-wide banner message; null = hidden
   announcementLevel  String  @default("info") // "info" | "warning" | "success"
   registrationOpen   Boolean @default(true) // allow new sign-ups
-  leaderboardEnabled Boolean @default(true) // show the public leaderboard
+  leaderboardEnabled Boolean @default(true) // legacy (leaderboard removed); column kept to avoid a destructive migration
+  propFirmsEnabled   Boolean @default(true) // show the Prop Firms page + nav item
   updatedAt          DateTime @updatedAt
+}
+
+// A trader's pre-market plan for one day (the /today page).
+model DayPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String // "YYYY-MM-DD" in New York time
+  bias      String? // "long" | "short" | "neutral"
+  focus     String? // main market for the day, e.g. "MES"
+  maxTrades Int?
+  note      String? // the plan itself: draw on liquidity, news times, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
 }
 
 model Upload {

@@ -20,34 +20,22 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   return NextResponse.json({ ok: true });
 }
 
-/**
- * Admin: moderate a user — leaderboard visibility, grant/revoke the admin
- * panel, or grant/revoke a Pro plan.
- */
+/** Admin: moderate a user — grant/revoke the admin panel or a Pro plan. */
 export async function PUT(req: NextRequest, ctx: Ctx) {
   const adminId = await requireAdmin();
   if (!adminId) return NextResponse.json({ error: "Admins only" }, { status: 403 });
 
   const { id } = await ctx.params;
   const body = (await req.json().catch(() => null)) as {
-    showOnLeaderboard?: boolean;
     isAdmin?: boolean;
     plan?: "free" | "pro";
   } | null;
-  if (!body || (body.showOnLeaderboard == null && body.isAdmin == null && body.plan == null)) {
+  if (!body || (body.isAdmin == null && body.plan == null)) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
 
   const target = await prisma.user.findUnique({ where: { id }, select: { username: true } });
   if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
-
-  if (typeof body.showOnLeaderboard === "boolean") {
-    await prisma.settings.upsert({
-      where: { userId: id },
-      update: { showOnLeaderboard: body.showOnLeaderboard },
-      create: { userId: id, showOnLeaderboard: body.showOnLeaderboard },
-    });
-  }
 
   if (typeof body.isAdmin === "boolean") {
     // Locking yourself out (or elevating the shared demo login) is never right.

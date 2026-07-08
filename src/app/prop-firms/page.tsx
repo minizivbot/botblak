@@ -1,9 +1,14 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSiteConfig } from "@/lib/siteconfig";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Prop Firms" };
 
 export default async function PropFirmsPage() {
+  const site = await getSiteConfig();
+  if (!site.propFirmsEnabled) redirect("/");
+
   const firms = await prisma.propFirm.findMany({
     where: { enabled: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],

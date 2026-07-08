@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export const metadata = { title: "Learn" };
 
 const STATS = [
@@ -49,6 +51,24 @@ export default function LearnPage() {
           Everything on this site, explained in plain language — the stats, the killzones, the concepts, and futures sizing.
         </p>
       </div>
+
+      <Link
+        href="/playbooks"
+        className="card flex items-center gap-4 border-amber-400/30 transition-colors hover:border-amber-400/60"
+      >
+        <span className="text-3xl">📚</span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2 font-semibold text-ink">
+            ICT Playbooks
+            <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">PRO</span>
+          </span>
+          <span className="block text-sm text-ink-2">
+            Six complete setups — Silver Bullet, OTE, Judas Swing, FVG, Turtle Soup, Power of 3 — each with a live
+            entry checklist you run during the session.
+          </span>
+        </span>
+        <span className="text-muted">→</span>
+      </Link>
 
       <section className="card">
         <h2 className="card-title">How TradeZone works — 3 steps</h2>

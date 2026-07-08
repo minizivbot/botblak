@@ -7,7 +7,7 @@ type Config = {
   announcement: string | null;
   announcementLevel: string;
   registrationOpen: boolean;
-  leaderboardEnabled: boolean;
+  propFirmsEnabled: boolean;
 };
 
 /** Admin controls that change the whole site for every visitor. */
@@ -16,7 +16,7 @@ export function AdminSiteControls({ initial }: { initial: Config }) {
   const [announcement, setAnnouncement] = useState(initial.announcement ?? "");
   const [level, setLevel] = useState(initial.announcementLevel);
   const [registrationOpen, setRegistrationOpen] = useState(initial.registrationOpen);
-  const [leaderboardEnabled, setLeaderboardEnabled] = useState(initial.leaderboardEnabled);
+  const [propFirmsEnabled, setPropFirmsEnabled] = useState(initial.propFirmsEnabled);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -30,7 +30,7 @@ export function AdminSiteControls({ initial }: { initial: Config }) {
         announcement: announcement.trim() || null,
         announcementLevel: level,
         registrationOpen,
-        leaderboardEnabled,
+        propFirmsEnabled,
       }),
     });
     setSaving(false);
@@ -84,10 +84,10 @@ export function AdminSiteControls({ initial }: { initial: Config }) {
       </label>
 
       <label className="flex items-start gap-2.5 rounded-lg border border-edge bg-raised/40 px-3 py-2.5">
-        <input type="checkbox" checked={leaderboardEnabled} onChange={(e) => setLeaderboardEnabled(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#3987e5]" />
+        <input type="checkbox" checked={propFirmsEnabled} onChange={(e) => setPropFirmsEnabled(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#3987e5]" />
         <span className="text-sm">
-          <span className="font-medium text-ink">Leaderboard enabled</span>
-          <span className="block text-xs text-muted">Uncheck to hide the public leaderboard from everyone.</span>
+          <span className="font-medium text-ink">Prop Firms page enabled</span>
+          <span className="block text-xs text-muted">Uncheck to hide the Prop Firms page and its menu item from everyone.</span>
         </span>
       </label>
 

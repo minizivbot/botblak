@@ -20,6 +20,7 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   "Everything in Free",
+  "Today — live killzone clock, pre-market plan, trade cap & loss-limit meter, position-size calculator",
   "Edge Report — finds your leaks with a dollar amount attached (overtrading, revenge trades, worst day/symbol)",
   "What-If Simulator — your real history replayed under discipline rules",
   "6 ICT Playbooks — Silver Bullet, OTE, Judas Swing & more, with live entry checklists",

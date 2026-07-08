@@ -46,9 +46,10 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M10 4.5v13" strokeLinecap="round" />
     </svg>
   ),
-  leaderboard: (
+  today: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
-      <path d="M7 16h6M10 13v3M4 4h12v3a6 6 0 01-12 0V4zM4 6H2.5v1a2.5 2.5 0 002.5 2.5M16 6h1.5v1A2.5 2.5 0 0115 9.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="10" cy="10.5" r="6" />
+      <path d="M10 7.5v3l2 1.5M7.5 2.5h5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   accounts: (
@@ -89,17 +90,15 @@ const icons: Record<string, React.ReactNode> = {
 
 const links = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
+  { href: "/today", label: "Today", icon: "today", pro: true },
   { href: "/accounts", label: "Accounts", icon: "accounts" },
   { href: "/trades", label: "Trades", icon: "trades" },
-  { href: "/reports", label: "Edge Report", icon: "reports", pro: true },
-  { href: "/playbooks", label: "Playbooks", icon: "playbooks", pro: true },
   { href: "/journal", label: "Journal", icon: "journal" },
-  { href: "/leaderboard", label: "Leaderboard", icon: "leaderboard" },
+  { href: "/reports", label: "Edge Report", icon: "reports", pro: true },
   { href: "/prop-firms", label: "Prop Firms", icon: "prop" },
   { href: "/motivation", label: "Daily Motivation", icon: "motivation" },
   { href: "/learn", label: "Learn", icon: "learn" },
   { href: "/import", label: "Import & Sync", icon: "import" },
-  { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
 export function Nav({
@@ -107,13 +106,13 @@ export function Nav({
   authed,
   isAdmin = false,
   isPro = false,
-  showLeaderboard = true,
+  showPropFirms = true,
 }: {
   username: string | null;
   authed: boolean;
   isAdmin?: boolean;
   isPro?: boolean;
-  showLeaderboard?: boolean;
+  showPropFirms?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -128,29 +127,39 @@ export function Nav({
   if (pathname === "/login" || pathname === "/register") return null;
 
   const initial = (username?.[0] ?? "?").toUpperCase();
-  let navLinks: { href: string; label: string; icon: string; pro?: boolean }[] = showLeaderboard
+  let navLinks: { href: string; label: string; icon: string; pro?: boolean }[] = showPropFirms
     ? links
-    : links.filter((l) => l.href !== "/leaderboard");
+    : links.filter((l) => l.href !== "/prop-firms");
   if (!isPro) navLinks = [...navLinks, { href: "/pricing", label: "Go Pro", icon: "pro", pro: true }];
   if (isAdmin) navLinks = [...navLinks, { href: "/admin", label: "Admin", icon: "admin" }];
 
   const accountBox = authed ? (
     <div className="rounded-xl border border-edge bg-raised/50 p-3">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-profit-mark text-sm font-bold text-white">
-          {initial}
-        </span>
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
-            {username}
-            {isPro && (
-              <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">PRO</span>
-            )}
-          </p>
-          <button onClick={signOut} className="text-xs text-muted transition-colors hover:text-loss">
-            Sign out
-          </button>
-        </div>
+        <Link
+          href="/settings"
+          onClick={() => setOpen(false)}
+          title="Settings"
+          className="group flex min-w-0 flex-1 items-center gap-2.5"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-profit-mark text-sm font-bold text-white">
+            {initial}
+          </span>
+          <span className="min-w-0">
+            <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink group-hover:text-accent">
+              {username}
+              {isPro && (
+                <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">PRO</span>
+              )}
+            </span>
+            <span className="block text-xs text-muted group-hover:text-ink-2">Settings</span>
+          </span>
+        </Link>
+        <button onClick={signOut} title="Sign out" aria-label="Sign out" className="shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:bg-raised hover:text-loss">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-4 w-4">
+            <path d="M12.5 6.5V4.75A1.75 1.75 0 0010.75 3h-5A1.75 1.75 0 004 4.75v10.5C4 16.22 4.78 17 5.75 17h5a1.75 1.75 0 001.75-1.75V13.5M8 10h9M17 10l-2.5-2.5M17 10l-2.5 2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
     </div>
   ) : (

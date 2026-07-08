@@ -29,8 +29,8 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-base font-semibold text-ink">What&apos;s public</h2>
           <p>
-            The leaderboard shows your username and aggregate stats (net P&L, win rate, trade count) to other users.
-            You can hide yourself from the leaderboard at any time in{" "}
+            Your public profile page shows your username and aggregate stats (net P&L, win rate, trade count) to
+            anyone with the link. You can make your profile private at any time in{" "}
             <Link href="/settings" className="text-accent hover:underline">Settings</Link>. Your individual trades,
             journal, and broker connections are never public.
           </p>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-base font-semibold text-ink">Your choices</h2>
           <p>
-            You can edit or delete your trades and accounts at any time, hide yourself from the leaderboard, and
+            You can edit or delete your trades and accounts at any time, make your profile private, and
             disconnect brokers. To delete your account entirely, contact the site owner.
           </p>
         </section>

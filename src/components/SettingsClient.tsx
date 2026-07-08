@@ -63,7 +63,7 @@ function ProfileCard() {
             {saving ? "Saving…" : "Save"}
           </button>
         </div>
-        <p className="mt-1 text-xs text-muted">This is the name shown on the leaderboard. Letters, numbers, and . _ - only.</p>
+        <p className="mt-1 text-xs text-muted">This is the name shown on your public profile. Letters, numbers, and . _ - only.</p>
       </div>
       {msg && (
         <p className={`rounded-lg border px-3 py-2 text-sm ${msg.ok ? "border-profit/40 bg-profit/10 text-profit" : "border-loss/40 bg-loss/10 text-loss"}`}>
@@ -181,8 +181,10 @@ export function SettingsClient() {
             className="mt-0.5 h-4 w-4 accent-[#3987e5]"
           />
           <span className="text-sm">
-            <span className="font-medium text-ink">Show me on the public leaderboard</span>
-            <span className="block text-xs text-muted">Uncheck to keep your stats private.</span>
+            <span className="font-medium text-ink">Public profile</span>
+            <span className="block text-xs text-muted">
+              Let others view your profile page and shared stat cards. Uncheck to keep your stats private.
+            </span>
           </span>
         </label>
         {message && (

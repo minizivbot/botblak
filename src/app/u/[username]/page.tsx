@@ -42,7 +42,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   if (!user) notFound();
 
   const isYou = viewer.username === user.username;
-  // Respect the leaderboard opt-out for other people's profiles.
+  // Respect the public-profile opt-out for other people's profiles.
   if (user.settings?.showOnLeaderboard === false && !isYou) {
     return (
       <div className="mx-auto max-w-xl">
@@ -50,7 +50,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
           <p className="text-4xl">🔒</p>
           <h1 className="mt-2 text-lg font-semibold">{user.username}</h1>
           <p className="mt-1 text-sm text-muted">This trader keeps their stats private.</p>
-          <Link href="/leaderboard" className="btn-ghost mt-4 inline-block">← Back to leaderboard</Link>
+          <Link href="/" className="btn-ghost mt-4 inline-block">← Back to TradeZone</Link>
         </div>
       </div>
     );
@@ -73,7 +73,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-      <Link href="/leaderboard" className="text-sm text-muted hover:text-ink">← Leaderboard</Link>
+      <Link href="/" className="text-sm text-muted hover:text-ink">← TradeZone</Link>
 
       {/* Header */}
       <div className="card flex flex-wrap items-center gap-4">

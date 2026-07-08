@@ -14,14 +14,12 @@ type Row = {
   tradeCount: number;
   accountCount: number;
   pnl: number;
-  onLeaderboard: boolean;
   isSelf: boolean;
 };
 
 export function AdminUserRow({ row, pnlLabel }: { row: Row; pnlLabel: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [shown, setShown] = useState(row.onLeaderboard);
   const [isAdmin, setIsAdmin] = useState(row.isAdmin);
   const [isPro, setIsPro] = useState(row.isPro);
 
@@ -38,10 +36,6 @@ export function AdminUserRow({ row, pnlLabel }: { row: Row; pnlLabel: string }) 
     }
     setBusy(false);
     return res.ok;
-  }
-
-  async function toggleLeaderboard() {
-    if (await update({ showOnLeaderboard: !shown })) setShown((v) => !v);
   }
 
   async function toggleAdmin() {
@@ -95,9 +89,6 @@ export function AdminUserRow({ row, pnlLabel }: { row: Row; pnlLabel: string }) 
               {isAdmin ? "Remove admin" : "Make admin"}
             </button>
           )}
-          <button onClick={toggleLeaderboard} disabled={busy} className="text-xs text-muted hover:text-ink-2 disabled:opacity-40">
-            {shown ? "Hide" : "Show"}
-          </button>
           {!row.isSelf && (
             <button onClick={remove} disabled={busy} className="text-xs text-loss hover:underline disabled:opacity-40">
               Delete

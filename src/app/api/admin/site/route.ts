@@ -9,7 +9,7 @@ const schema = z.object({
   announcement: z.string().trim().max(280).nullish().transform((s) => s || null),
   announcementLevel: z.enum(["info", "warning", "success"]).optional(),
   registrationOpen: z.boolean().optional(),
-  leaderboardEnabled: z.boolean().optional(),
+  propFirmsEnabled: z.boolean().optional(),
 });
 
 /** Admin: update the site-wide config that affects every visitor. */

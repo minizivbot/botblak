@@ -23,7 +23,7 @@ export default function TermsPage() {
           <p>
             The service is provided &quot;as is&quot; without warranties of any kind. Stats, imports, and broker syncs
             can contain errors — always verify against your broker&apos;s own statements before relying on any number.
-            The leaderboard shows self-reported data unless marked verified.
+            Public profiles show self-reported data unless marked verified.
           </p>
         </section>
         <section>

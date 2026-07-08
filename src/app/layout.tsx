@@ -55,7 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             authed={!viewer.isDemo}
             isAdmin={viewer.isAdmin}
             isPro={viewer.isPro}
-            showLeaderboard={site.leaderboardEnabled}
+            showPropFirms={site.propFirmsEnabled}
           />
           <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">{children}</div>

@@ -30,7 +30,6 @@ export default async function AdminPage() {
       plan: true,
       proUntil: true,
       createdAt: true,
-      settings: { select: { showOnLeaderboard: true } },
       _count: { select: { trades: true, accounts: true } },
       trades: { select: { id: true, symbol: true, direction: true, entryPrice: true, exitPrice: true, size: true, fees: true, entryDate: true, exitDate: true, strategy: true } },
     },
@@ -50,7 +49,6 @@ export default async function AdminPage() {
     tradeCount: u._count.trades,
     accountCount: u._count.accounts,
     pnl: computeStats(u.trades as StatsTrade[], 0).totalPnl,
-    onLeaderboard: u.settings?.showOnLeaderboard !== false,
     isSelf: u.id === userId,
   }));
   const proCount = rows.filter((r) => r.isPro).length;
@@ -62,7 +60,7 @@ export default async function AdminPage() {
         <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-bold text-accent">restricted</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="card">
           <p className="text-xs text-muted">Users</p>
           <p className="text-2xl font-bold">{users.length}</p>
@@ -78,10 +76,6 @@ export default async function AdminPage() {
         <div className="card">
           <p className="text-xs text-muted">Total trades</p>
           <p className="text-2xl font-bold">{totalTrades}</p>
-        </div>
-        <div className="card">
-          <p className="text-xs text-muted">On leaderboard</p>
-          <p className="text-2xl font-bold">{rows.filter((r) => r.onLeaderboard).length}</p>
         </div>
       </div>
 
