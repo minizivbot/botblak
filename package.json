@@ -16,12 +16,14 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "@prisma/client": "^6.11.0",
     "next": "^15.3.4",
     "papaparse": "^5.5.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "recharts": "^3.0.2",
+    "stripe": "^22.3.0",
     "web-push": "^3.6.7",
     "zod": "^3.25.67"
   },

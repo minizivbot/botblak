@@ -13,6 +13,7 @@ const FREE_FEATURES = [
   "2 trading accounts",
   "Dashboard stats, killzones & insights",
   "P&L calendar with red-folder news days",
+  "Crew — private group with your friends",
   "Morning red-folder push + weekly recap push",
   "6 ICT playbooks + video lessons (Learn)",
   "Achievements & green-day streaks",
@@ -22,11 +23,11 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   "Everything in Free",
+  "🧠 AI Coach — Claude reads your last 30 days and tells you exactly what to fix (3 sessions/day)",
   "Unlimited trading accounts",
   "Broker auto-sync (Tradovate, Alpaca)",
   "Custom app themes — gold, violet, emerald & more",
   "Priority support — your requests jump the queue",
-  "Early access to every new feature",
 ];
 
 function Check({ dim = false }: { dim?: boolean }) {
@@ -123,8 +124,9 @@ export default async function PricingPage() {
       </div>
 
       <p className="text-center text-xs text-muted">
-        Upgrades are currently activated personally within a few hours of your request — card checkout is coming.
-        Questions? Use the support chat in the corner. 💬
+        Payments are handled by Stripe — cancel anytime from Settings. If card checkout isn&apos;t live yet, the button
+        files an upgrade request instead and we activate you personally within a few hours. Questions? Use the support
+        chat in the corner. 💬
       </p>
     </div>
   );

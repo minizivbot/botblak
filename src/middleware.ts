@@ -21,9 +21,15 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const allow = () => withSecurityHeaders(NextResponse.next());
 
-  // Auth endpoints + Vercel cron endpoints (crons carry no session; the
-  // routes themselves verify the CRON_SECRET / vercel-cron caller).
-  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/api/auth/") || pathname.startsWith("/api/cron/")) {
+  // Auth endpoints, Vercel cron endpoints, and the Stripe webhook carry no
+  // session cookie — each verifies its caller itself (CRON_SECRET / vercel-cron
+  // user-agent / Stripe signature).
+  if (
+    PUBLIC_PATHS.includes(pathname) ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/cron/") ||
+    pathname === "/api/billing/webhook"
+  ) {
     return allow();
   }
 

@@ -51,6 +51,19 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M7 16.5h6M10 13.5v3M5.5 3.5h9v4a4.5 4.5 0 01-9 0v-4zM5.5 5.5H3.5v1A2.5 2.5 0 006 9M14.5 5.5h2v1A2.5 2.5 0 0114 9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  coach: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <path d="M10 3a5.5 5.5 0 015.5 5.5c0 2-1 3.4-2.2 4.4-.5.4-.8 1-.8 1.6v.5a1.5 1.5 0 01-1.5 1.5h-2a1.5 1.5 0 01-1.5-1.5v-.5c0-.6-.3-1.2-.8-1.6C5.5 11.9 4.5 10.5 4.5 8.5A5.5 5.5 0 0110 3z" strokeLinejoin="round" />
+      <path d="M8.5 8l1.5 1.5L12 7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  crew: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <circle cx="7" cy="7.5" r="2.5" />
+      <circle cx="13.5" cy="8.5" r="2" />
+      <path d="M3 16c.5-2.5 2-4 4-4s3.5 1.5 4 4M11.5 16c.3-1.8 1-3 2-3.5 1.5-.6 3 .5 3.5 3" strokeLinecap="round" />
+    </svg>
+  ),
   admin: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
       <path d="M10 2.5l6 2.5v4c0 3.5-2.5 6.3-6 7.5-3.5-1.2-6-4-6-7.5V5l6-2.5z" strokeLinejoin="round" />
@@ -74,6 +87,8 @@ const links = [
   { href: "/calendar", label: "Calendar", icon: "calendar" },
   { href: "/accounts", label: "Accounts", icon: "accounts" },
   { href: "/trades", label: "Trades", icon: "trades" },
+  { href: "/coach", label: "AI Coach", icon: "coach", pro: true },
+  { href: "/crew", label: "Crew", icon: "crew" },
   { href: "/achievements", label: "Achievements", icon: "trophy" },
   { href: "/prop-firms", label: "Prop Firms", icon: "prop" },
   { href: "/motivation", label: "Daily Motivation", icon: "motivation" },

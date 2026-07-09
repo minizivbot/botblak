@@ -271,6 +271,8 @@ export function SettingsClient({ isPro = false }: { isPro?: boolean }) {
         <PushToggle />
       </section>
 
+      {isPro && <BillingCard />}
+
       <section className="card max-w-lg space-y-2">
         <h2 className="text-base font-semibold">Trading accounts</h2>
         <p className="text-sm text-muted">
@@ -299,6 +301,34 @@ export function SettingsClient({ isPro = false }: { isPro?: boolean }) {
 
       <DangerZone />
     </div>
+  );
+}
+
+function BillingCard() {
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function openPortal() {
+    setBusy(true);
+    setMsg(null);
+    const res = await fetch("/api/billing/portal", { method: "POST" }).catch(() => null);
+    const data = await res?.json().catch(() => ({}));
+    setBusy(false);
+    if (res?.ok && data.url) window.location.href = data.url;
+    else setMsg(data?.error || "Couldn't open the billing portal");
+  }
+
+  return (
+    <section className="card max-w-lg space-y-3">
+      <h2 className="text-base font-semibold">Billing</h2>
+      <p className="text-sm text-muted">
+        Update your card, download invoices, or cancel — all handled securely by Stripe.
+      </p>
+      <button onClick={openPortal} disabled={busy} className="btn-ghost text-sm">
+        {busy ? "Opening…" : "Manage subscription"}
+      </button>
+      {msg && <p className="text-xs text-muted">{msg}</p>}
+    </section>
   );
 }
 

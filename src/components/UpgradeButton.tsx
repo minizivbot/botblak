@@ -4,9 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 
 /**
- * Pricing CTA. Card checkout isn't wired yet, so a signed-in user's click
- * opens a support request that admins fulfil by granting Pro from the admin
- * panel — the user gets a push + support reply when it's active.
+ * Pricing CTA. Tries real Stripe Checkout first; when billing isn't configured
+ * yet (503), falls back to an upgrade request in the support chat that the
+ * admin fulfils manually.
  */
 export function UpgradeButton({
   plan,
@@ -45,19 +45,40 @@ export function UpgradeButton({
 
   async function upgrade() {
     setState("busy");
-    const label = plan === "yearly" ? "yearly ($120/yr)" : "monthly ($5 first month, then $15/mo)";
-    const res = await fetch("/api/support", {
+
+    // 1. Real checkout when Stripe is wired up.
+    const res = await fetch("/api/billing/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: `🚀 Upgrade request: I'd like the ${label} Pro plan.` }),
+      body: JSON.stringify({ plan }),
     }).catch(() => null);
-    setState(res?.ok ? "sent" : "error");
+    if (res?.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    }
+
+    // 2. Fallback: file the upgrade as a support request.
+    if (res?.status === 503) {
+      const label = plan === "yearly" ? "yearly ($120/yr)" : "monthly ($5 first month, then $15/mo)";
+      const support = await fetch("/api/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: `🚀 Upgrade request: I'd like the ${label} Pro plan.` }),
+      }).catch(() => null);
+      setState(support?.ok ? "sent" : "error");
+      return;
+    }
+
+    setState("error");
   }
 
   return (
     <div>
       <button onClick={upgrade} disabled={state === "busy"} className={`${cls} disabled:opacity-50`}>
-        {state === "busy" ? "Sending…" : plan === "yearly" ? "Get yearly Pro" : "Get monthly Pro"}
+        {state === "busy" ? "One sec…" : plan === "yearly" ? "Get yearly Pro" : "Get monthly Pro"}
       </button>
       {state === "error" && <p className="mt-1.5 text-center text-xs text-loss">Something went wrong — try again.</p>}
     </div>

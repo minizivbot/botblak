@@ -16,6 +16,7 @@ model User {
   isAdmin      Boolean        @default(false)
   plan         String         @default("free") // "free" | "pro"
   proUntil     DateTime? // pro expires at this time; null = no expiry while plan is "pro"
+  stripeCustomerId String?    @unique // set on first successful checkout
   concepts     String? // JSON array of the user's personal concept list
   createdAt    DateTime       @default(now())
   trades       Trade[]
@@ -27,6 +28,38 @@ model User {
   pushSubscriptions PushSubscription[]
   supportMessages   SupportMessage[]
   dayPlans          DayPlan[]
+  crewMembership    CrewMember?
+  aiReports         AiReport[]
+}
+
+// A private group of friends who share their aggregate stats with each other.
+model Crew {
+  id        String       @id @default(cuid())
+  name      String
+  code      String       @unique // short invite code
+  ownerId   String
+  createdAt DateTime     @default(now())
+  members   CrewMember[]
+}
+
+model CrewMember {
+  id       String   @id @default(cuid())
+  crewId   String
+  crew     Crew     @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  userId   String   @unique // one crew per user
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+}
+
+// Saved AI-coach reviews so the user can look back at past feedback.
+model AiReport {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model BrokerConnection {
