@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { closedTrades, type StatsTrade } from "@/lib/stats";
-import { sendPushToUser } from "@/lib/push";
+import { sendPushToUser, wantsPush } from "@/lib/push";
 import { fmtSignedMoney } from "@/lib/format";
 import { isCronCall } from "@/lib/cron";
 
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
   let sent = 0;
   for (const { userId } of subscribed) {
+    if (!(await wantsPush(userId, "notifyWeekly"))) continue;
     const closed = closedTrades(
       (await prisma.trade.findMany({ where: { userId, exitDate: { gte: weekAgo } } })) as StatsTrade[],
     );

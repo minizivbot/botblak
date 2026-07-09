@@ -15,6 +15,16 @@ function ensureConfigured(): boolean {
 
 export type PushPayload = { title: string; body: string; url?: string };
 
+/** Per-type push preference columns on Settings. */
+export type NotifyPref = "notifyMorning" | "notifyDaily" | "notifyWeekly" | "notifyAlerts";
+
+/** True unless the user has explicitly turned this notification type off. */
+export async function wantsPush(userId: string, pref: NotifyPref): Promise<boolean> {
+  const s = await prisma.settings.findUnique({ where: { userId }, select: { [pref]: true } });
+  // No settings row (or column true) => opted in by default.
+  return s ? (s as Record<string, boolean>)[pref] !== false : true;
+}
+
 /** Send a push notification to every device the user has subscribed on. */
 export async function sendPushToUser(userId: string, payload: PushPayload): Promise<void> {
   if (!ensureConfigured()) return;
@@ -39,9 +49,17 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
   );
 }
 
-/** Send a push notification to every subscribed user (site-wide announcements). */
-export async function sendPushToAll(payload: PushPayload): Promise<void> {
+/**
+ * Send to every subscribed user who hasn't opted out of `pref`.
+ * Used for site-wide announcements (respect "notifyAlerts") and the morning
+ * briefing (respect "notifyMorning").
+ */
+export async function sendPushToAll(payload: PushPayload, pref: NotifyPref = "notifyAlerts"): Promise<void> {
   if (!ensureConfigured()) return;
   const subs = await prisma.pushSubscription.findMany({ select: { userId: true }, distinct: ["userId"] });
-  await Promise.all(subs.map((s) => sendPushToUser(s.userId, payload)));
+  await Promise.all(
+    subs.map(async (s) => {
+      if (await wantsPush(s.userId, pref)) await sendPushToUser(s.userId, payload);
+    }),
+  );
 }

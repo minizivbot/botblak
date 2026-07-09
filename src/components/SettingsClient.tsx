@@ -6,6 +6,14 @@ import Link from "next/link";
 import { PushToggle } from "./PushToggle";
 
 type Broker = { id: string; label: string; configured: boolean };
+type NotifyPrefs = { morning: boolean; daily: boolean; weekly: boolean; alerts: boolean };
+
+const NOTIFY_ITEMS: { key: keyof NotifyPrefs; label: string; desc: string }[] = [
+  { key: "morning", label: "Morning news briefing", desc: "Weekday heads-up when today has red-folder events." },
+  { key: "daily", label: "End-of-day scorecard", desc: "Your P&L, trades and streak after the close." },
+  { key: "weekly", label: "Weekly recap", desc: "Friday summary of the week you just traded." },
+  { key: "alerts", label: "Risk & milestone alerts", desc: "Daily-loss limit hit, prop challenge passed, new achievement, site announcements." },
+];
 function ProfileCard() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -81,6 +89,7 @@ export function SettingsClient({ isPro = false }: { isPro?: boolean }) {
   const [maxDailyLoss, setMaxDailyLoss] = useState("");
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
   const [accent, setAccent] = useState<string | null>(null);
+  const [notify, setNotify] = useState<NotifyPrefs>({ morning: true, daily: true, weekly: true, alerts: true });
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -95,6 +104,12 @@ export function SettingsClient({ isPro = false }: { isPro?: boolean }) {
         setMaxDailyLoss(b.settings?.maxDailyLoss != null ? String(b.settings.maxDailyLoss) : "");
         setShowOnLeaderboard(b.settings?.showOnLeaderboard !== false);
         setAccent(b.settings?.accent ?? null);
+        setNotify({
+          morning: b.settings?.notifyMorning !== false,
+          daily: b.settings?.notifyDaily !== false,
+          weekly: b.settings?.notifyWeekly !== false,
+          alerts: b.settings?.notifyAlerts !== false,
+        });
         setBrokers(b.brokers ?? []);
         setLoaded(true);
       })
@@ -103,6 +118,26 @@ export function SettingsClient({ isPro = false }: { isPro?: boolean }) {
         setLoaded(true);
       });
   }, []);
+
+  // Notification preferences save instantly on toggle (no Save button needed).
+  async function toggleNotify(key: keyof NotifyPrefs) {
+    const next = { ...notify, [key]: !notify[key] };
+    setNotify(next);
+    await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        startingBalance: Number(startingBalance) || 10000,
+        currency,
+        maxDailyLoss: maxDailyLoss.trim() === "" ? null : Number(maxDailyLoss),
+        showOnLeaderboard,
+        notifyMorning: next.morning,
+        notifyDaily: next.daily,
+        notifyWeekly: next.weekly,
+        notifyAlerts: next.alerts,
+      }),
+    }).catch(() => null);
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -269,6 +304,24 @@ export function SettingsClient({ isPro = false }: { isPro?: boolean }) {
       <section className="card max-w-lg space-y-3">
         <h2 className="text-base font-semibold">Notifications</h2>
         <PushToggle />
+        <div className="space-y-2 border-t border-edge pt-3">
+          <p className="text-xs text-muted">Choose which push notifications you get:</p>
+          {NOTIFY_ITEMS.map((item) => (
+            <label key={item.key} className="flex items-start gap-2.5 rounded-lg border border-edge bg-raised/40 px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={notify[item.key]}
+                onChange={() => toggleNotify(item.key)}
+                disabled={!loaded}
+                className="mt-0.5 h-4 w-4 accent-[#3987e5]"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-ink">{item.label}</span>
+                <span className="block text-xs text-muted">{item.desc}</span>
+              </span>
+            </label>
+          ))}
+        </div>
       </section>
 
       {isPro && <BillingCard />}

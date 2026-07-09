@@ -24,10 +24,13 @@ export async function GET(req: NextRequest) {
     .join(" · ");
   const extra = events.length > 3 ? ` +${events.length - 3} more` : "";
 
-  await sendPushToAll({
-    title: `📕 ${events.length} red folder${events.length === 1 ? "" : "s"} today`,
-    body: `${list}${extra} (NY time). Plan around the news — not through it.`,
-    url: "/calendar",
-  });
+  await sendPushToAll(
+    {
+      title: `📕 ${events.length} red folder${events.length === 1 ? "" : "s"} today`,
+      body: `${list}${extra} (NY time). Plan around the news — not through it.`,
+      url: "/calendar",
+    },
+    "notifyMorning",
+  );
   return NextResponse.json({ sent: true, events: events.length });
 }

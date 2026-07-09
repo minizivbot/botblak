@@ -47,6 +47,11 @@ export const settingsSchema = z.object({
     .union([z.enum(["gold", "violet", "emerald", "rose", "ice"]), z.literal(""), z.null()])
     .optional()
     .transform((v) => (v === "" ? null : v)),
+  // Per-type push preferences.
+  notifyMorning: z.boolean().optional(),
+  notifyDaily: z.boolean().optional(),
+  notifyWeekly: z.boolean().optional(),
+  notifyAlerts: z.boolean().optional(),
 });
 
 export const usernameSchema = z.object({

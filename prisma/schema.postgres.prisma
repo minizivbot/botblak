@@ -150,6 +150,11 @@ model Settings {
   showOnLeaderboard Boolean @default(true) // public-profile opt-out (legacy column name)
   achievements    String? // JSON array of unlocked achievement ids (so we only push once per badge)
   accent          String? // Pro theme: accent color id ("gold", "violet", ...); null = default blue
+  // Per-type push preferences (only matter once the browser is subscribed).
+  notifyMorning Boolean @default(true) // weekday red-folder morning briefing
+  notifyDaily   Boolean @default(true) // end-of-day scorecard
+  notifyWeekly  Boolean @default(true) // Friday weekly recap
+  notifyAlerts  Boolean @default(true) // risk-limit hit, funded, new achievement, announcements
 }
 
 model SiteConfig {

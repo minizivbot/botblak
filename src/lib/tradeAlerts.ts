@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { propStatus } from "./prop";
 import { closedTrades, type StatsTrade } from "./stats";
-import { sendPushToUser } from "./push";
+import { sendPushToUser, wantsPush } from "./push";
 import { fmtSignedMoney, fmtMoney } from "./format";
 import { computeAchievements, unlockedIds } from "./achievements";
 
@@ -13,6 +13,11 @@ import { computeAchievements, unlockedIds } from "./achievements";
  */
 export async function checkTradeAlerts(userId: string, accountId: string | null): Promise<void> {
   try {
+    // Milestone/risk pushes respect the user's "Risk & milestone alerts" toggle.
+    // State changes (marking FUNDED, storing unlocked achievements) still happen
+    // either way — only the push itself is gated.
+    const alertsOn = await wantsPush(userId, "notifyAlerts");
+
     if (accountId) {
       const account = await prisma.account.findUnique({ where: { id: accountId } });
       if (account && account.propStartBalance != null && !account.propFunded) {
@@ -20,11 +25,12 @@ export async function checkTradeAlerts(userId: string, accountId: string | null)
         const status = propStatus(account, trades);
         if (status.targetReached && !status.breached) {
           await prisma.account.update({ where: { id: account.id }, data: { propFunded: true } });
-          await sendPushToUser(userId, {
-            title: "🎉 Challenge passed!",
-            body: `${account.name} just hit its profit target — marked FUNDED.`,
-            url: "/accounts",
-          });
+          if (alertsOn)
+            await sendPushToUser(userId, {
+              title: "🎉 Challenge passed!",
+              body: `${account.name} just hit its profit target — marked FUNDED.`,
+              url: "/accounts",
+            });
         }
       }
     }
@@ -39,7 +45,7 @@ export async function checkTradeAlerts(userId: string, accountId: string | null)
       const total = todayTrades.reduce((s, t) => s + t.pnl, 0);
       const beforeLast = total - (todayTrades[todayTrades.length - 1]?.pnl ?? 0);
       const limit = settings.maxDailyLoss;
-      if (total <= -limit && beforeLast > -limit) {
+      if (total <= -limit && beforeLast > -limit && alertsOn) {
         await sendPushToUser(userId, {
           title: "🛑 Daily loss limit hit",
           body: `Today: ${fmtSignedMoney(total, settings.currency)} — your limit is ${fmtMoney(limit, settings.currency)}. Time to stop.`,
@@ -73,12 +79,14 @@ export async function checkTradeAlerts(userId: string, accountId: string | null)
         update: { achievements: JSON.stringify(nowUnlocked) },
         create: { userId, achievements: JSON.stringify(nowUnlocked) },
       });
-      for (const a of fresh.slice(0, 3)) {
-        await sendPushToUser(userId, {
-          title: `${a.emoji} Achievement unlocked: ${a.name}`,
-          body: a.desc,
-          url: "/",
-        });
+      if (alertsOn) {
+        for (const a of fresh.slice(0, 3)) {
+          await sendPushToUser(userId, {
+            title: `${a.emoji} Achievement unlocked: ${a.name}`,
+            body: a.desc,
+            url: "/",
+          });
+        }
       }
     }
   } catch (e) {
