@@ -101,12 +101,14 @@ export function Nav({
   isAdmin = false,
   isPro = false,
   showPropFirms = true,
+  showCoach = false,
 }: {
   username: string | null;
   authed: boolean;
   isAdmin?: boolean;
   isPro?: boolean;
   showPropFirms?: boolean;
+  showCoach?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -121,9 +123,9 @@ export function Nav({
   if (pathname === "/login" || pathname === "/register") return null;
 
   const initial = (username?.[0] ?? "?").toUpperCase();
-  let navLinks: { href: string; label: string; icon: string; pro?: boolean }[] = showPropFirms
-    ? links
-    : links.filter((l) => l.href !== "/prop-firms");
+  let navLinks: { href: string; label: string; icon: string; pro?: boolean }[] = links.filter(
+    (l) => (showPropFirms || l.href !== "/prop-firms") && (showCoach || l.href !== "/coach"),
+  );
   if (!isPro) navLinks = [...navLinks, { href: "/pricing", label: "Go Pro", icon: "pro", pro: true }];
   if (isAdmin) navLinks = [...navLinks, { href: "/admin", label: "Admin", icon: "admin" }];
 

@@ -9,6 +9,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "AI Coach" };
 
 export default async function CoachPage() {
+  // Hidden until the owner sets ANTHROPIC_API_KEY — no paid service, no page.
+  if (!aiConfigured()) redirect("/");
+
   const viewer = await getViewer();
   if (viewer.isDemo || !viewer.userId) redirect("/login");
 

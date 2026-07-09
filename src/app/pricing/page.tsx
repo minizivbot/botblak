@@ -1,5 +1,6 @@
 import { getViewer } from "@/lib/viewer";
 import { PRICING } from "@/lib/plan";
+import { aiConfigured } from "@/lib/ai";
 import { UpgradeButton } from "@/components/UpgradeButton";
 
 export const dynamic = "force-dynamic";
@@ -21,14 +22,24 @@ const FREE_FEATURES = [
   "CSV import & export, shareable stat cards",
 ];
 
-const PRO_FEATURES = [
+const PRO_FEATURES_BASE = [
   "Everything in Free",
-  "🧠 AI Coach — Claude reads your last 30 days and tells you exactly what to fix (3 sessions/day)",
   "Unlimited trading accounts",
   "Broker auto-sync (Tradovate, Alpaca)",
   "Custom app themes — gold, violet, emerald & more",
   "Priority support — your requests jump the queue",
 ];
+
+/** The AI coach is only advertised once it's actually live (API key set). */
+function proFeatures(coachLive: boolean): string[] {
+  return coachLive
+    ? [
+        PRO_FEATURES_BASE[0],
+        "🧠 AI Coach — Claude reads your last 30 days and tells you exactly what to fix (3 sessions/day)",
+        ...PRO_FEATURES_BASE.slice(1),
+      ]
+    : PRO_FEATURES_BASE;
+}
 
 function Check({ dim = false }: { dim?: boolean }) {
   return (
@@ -41,6 +52,7 @@ function Check({ dim = false }: { dim?: boolean }) {
 export default async function PricingPage() {
   const viewer = await getViewer();
   const authed = !viewer.isDemo;
+  const PRO_FEATURES = proFeatures(aiConfigured());
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">

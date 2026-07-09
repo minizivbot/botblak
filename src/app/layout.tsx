@@ -9,6 +9,7 @@ import { SupportWidget } from "@/components/SupportWidget";
 import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { accentStyle } from "@/lib/themes";
+import { aiConfigured } from "@/lib/ai";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -64,6 +65,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             isAdmin={viewer.isAdmin}
             isPro={viewer.isPro}
             showPropFirms={site.propFirmsEnabled}
+            showCoach={aiConfigured()}
           />
           <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">{children}</div>
