@@ -27,6 +27,7 @@ import {
 } from "@/lib/stats";
 import { mistakeLedger } from "@/lib/mistakes";
 import { dailyGrades } from "@/lib/discipline";
+import { weeklyMonthlyRR } from "@/lib/rr";
 import { fmtMoney, fmtSignedMoney, fmtPct, fmtNum, fmtDuration, fmtDateTime } from "@/lib/format";
 import { FilterBar } from "@/components/FilterBar";
 import { StatTile } from "@/components/StatTile";
@@ -135,6 +136,7 @@ export default async function DashboardPage({
   const daily = dailyPnlMap(trades);
   const ledger = mistakeLedger(trades);
   const grades = dailyGrades(trades, settings?.maxDailyLoss ?? null);
+  const rrAvg = weeklyMonthlyRR(trades as { rr?: number | null; entryDate: Date }[]);
 
   const returnPct = startingBalance > 0 ? stats.totalPnl / startingBalance : null;
   const recent = closedTrades(trades).slice(-6).reverse();
@@ -321,6 +323,26 @@ export default async function DashboardPage({
           </div>
         ))}
       </div>
+
+      {/* Average R:R */}
+      {(rrAvg.week != null || rrAvg.month != null) && (
+        <section className="card">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="card-title mb-0">Average R:R</h2>
+            <span className="text-xs text-muted">Reward-to-risk you logged on your trades</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-edge bg-raised/40 px-3 py-2.5">
+              <p className="text-xs text-muted">This week</p>
+              <p className="mt-0.5 text-lg font-bold text-ink">{rrAvg.week == null ? "—" : `${rrAvg.week.toFixed(2)}R`}</p>
+            </div>
+            <div className="rounded-xl border border-edge bg-raised/40 px-3 py-2.5">
+              <p className="text-xs text-muted">This month</p>
+              <p className="mt-0.5 text-lg font-bold text-ink">{rrAvg.month == null ? "—" : `${rrAvg.month.toFixed(2)}R`}</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Discipline score */}
       {grades.length > 0 && (

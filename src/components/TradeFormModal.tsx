@@ -53,6 +53,7 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
     entryDate: trade ? toLocalInput(trade.entryDate) : nowInput(),
     exitDate: toLocalInput(trade?.exitDate ?? null),
     strategy: trade?.strategy ?? "",
+    rr: trade?.rr != null ? String(trade.rr) : "",
     notes: trade?.notes ?? "",
     accountId: defaultAccountId,
   });
@@ -149,6 +150,7 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
         entryDate: new Date(form.entryDate + ":00Z").toISOString(),
         exitDate: hasExitDate ? new Date(form.exitDate + ":00Z").toISOString() : null,
         strategy: form.strategy || null,
+        rr: form.rr.trim() === "" ? null : Number(form.rr),
         concepts: concepts.length ? concepts.join(", ") : null,
         mistakes: mistakes.length ? mistakes.join(", ") : null,
         notes: form.notes || null,
@@ -285,14 +287,30 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
             </div>
           )}
 
-          <div>
-            <label className="field-label">Strategy tag</label>
-            <input className="field" value={form.strategy} onChange={set("strategy")} placeholder="Silver Bullet, FVG, Order Block…" list="strategy-suggestions" />
-            <datalist id="strategy-suggestions">
-              {ICT_SETUPS.map((s) => (
-                <option key={s} value={s} />
-              ))}
-            </datalist>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <div>
+              <label className="field-label">Strategy tag</label>
+              <input className="field" value={form.strategy} onChange={set("strategy")} placeholder="Silver Bullet, FVG, Order Block…" list="strategy-suggestions" />
+              <datalist id="strategy-suggestions">
+                {ICT_SETUPS.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+            </div>
+            <div className="w-28">
+              <label className="field-label">R:R</label>
+              <input
+                className="field"
+                type="number"
+                step="any"
+                min="0"
+                inputMode="decimal"
+                value={form.rr}
+                onChange={set("rr")}
+                placeholder="e.g. 2.5"
+              />
+              <p className="mt-1 text-[11px] text-muted">reward ÷ risk</p>
+            </div>
           </div>
 
           <div>

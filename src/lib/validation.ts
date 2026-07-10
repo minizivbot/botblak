@@ -18,6 +18,10 @@ export const tradeSchema = z
     strategy: z.string().trim().max(50).nullish().transform((s) => s || null),
     concepts: z.string().trim().max(500).nullish().transform((s) => s || null),
     mistakes: z.string().trim().max(300).nullish().transform((s) => s || null),
+    rr: z
+      .union([z.coerce.number().min(0, "R:R can't be negative").max(1000), z.literal(""), z.null()])
+      .optional()
+      .transform((v) => (typeof v === "number" ? v : null)),
     accountId: z.string().trim().max(50).nullish().transform((s) => s || null),
     notes: z.string().trim().max(5000).nullish().transform((s) => s || null),
     screenshotPath: z.string().max(500).nullish().transform((s) => s || null),

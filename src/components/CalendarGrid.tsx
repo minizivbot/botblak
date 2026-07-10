@@ -5,7 +5,7 @@ import { fmtSignedMoney } from "@/lib/format";
 
 export type DayTrade = { symbol: string; direction: string; pnl: number; account: string | null; time: string };
 export type DayAccount = { name: string; pnl: number; count: number };
-export type DayDetail = { pnl: number; count: number; wins: number; trades: DayTrade[]; accounts: DayAccount[] };
+export type DayDetail = { pnl: number; count: number; wins: number; rr: number | null; trades: DayTrade[]; accounts: DayAccount[] };
 export type DayNewsLite = { time: string; currency: string; title: string };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -171,6 +171,7 @@ function DayModal({
             <h2 className="text-base font-semibold">{label}</h2>
             <p className="text-xs text-muted">
               {detail.count} trade{detail.count === 1 ? "" : "s"}
+              {detail.rr != null && <> · {detail.rr.toFixed(2)}R avg</>}
             </p>
           </div>
           <span className={`text-2xl font-bold tabular-nums ${detail.pnl > 0 ? "text-profit" : detail.pnl < 0 ? "text-loss" : "text-ink-2"}`}>

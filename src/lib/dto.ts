@@ -19,6 +19,7 @@ export type TradeDTO = {
   strategy: string | null;
   concepts: string | null;
   mistakes: string | null;
+  rr: number | null;
   notes: string | null;
   screenshotPath: string | null;
   source: string;
@@ -41,6 +42,7 @@ export function toTradeDTO(t: TradeWithAccount): TradeDTO {
     strategy: t.strategy,
     concepts: t.concepts,
     mistakes: t.mistakes,
+    rr: t.rr,
     notes: t.notes,
     screenshotPath: t.screenshotPath,
     source: t.source,

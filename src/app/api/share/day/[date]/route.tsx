@@ -25,7 +25,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
     prisma.user.count(),
   ]);
   const currency = settings?.currency ?? "USD";
-  const startingBalance = settings?.startingBalance ?? 10000;
   const nameOf = new Map(accounts.map((a) => [a.id, a.name]));
 
   // Match the calendar's keying: UTC close date.
@@ -35,8 +34,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
     .sort((a, b) => b.pnl - a.pnl);
 
   const total = dayTrades.reduce((s, t) => s + t.pnl, 0);
-  // Day return as a % of the account — meaningful even on a single trade.
-  const returnPct = startingBalance > 0 ? (total / startingBalance) * 100 : 0;
+  // The day's R:R — average when there's more than one trade, otherwise the
+  // single trade's R:R. Trades without an R:R value are ignored.
+  const rrVals = dayTrades.map((t) => (t as { rr?: number | null }).rr).filter((v): v is number => v != null);
+  const dayRR = rrVals.length ? rrVals.reduce((s, v) => s + v, 0) / rrVals.length : null;
 
   const green = "#22c55e";
   const red = "#ef4444";
@@ -61,11 +62,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
   const headSize = headStr.length <= 8 ? 96 : headStr.length <= 11 ? 78 : headStr.length <= 14 ? 62 : 52;
 
   const stats = [
-    { label: "Trades", value: String(dayTrades.length), color: ink },
+    { label: "Traders", value: userCount.toLocaleString("en-US"), color: ink },
     {
-      label: "Return",
-      value: dayTrades.length ? `${returnPct >= 0 ? "+" : ""}${returnPct.toFixed(1)}%` : "—",
-      color: returnPct > 0 ? green : returnPct < 0 ? red : ink,
+      label: rrVals.length > 1 ? "Avg R:R" : "R:R",
+      value: dayRR == null ? "—" : `${dayRR.toFixed(2)}R`,
+      color: dayRR != null ? green : ink,
     },
   ];
 
@@ -182,7 +183,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
 
         {/* Footer */}
         <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 22, color: muted }}>
-          <span>Join {userCount.toLocaleString("en-US")} trader{userCount === 1 ? "" : "s"} on TradeZone</span>
+          <span>Track your edge</span>
           <span style={{ color: "#4a94ec", fontWeight: 700 }}>{SITE}</span>
         </div>
       </div>

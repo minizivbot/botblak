@@ -53,16 +53,23 @@ export default async function CalendarPage({
   // Rich per-day breakdown, keyed "YYYY-MM-DD" by (UTC) close date. Trades are
   // chronological within the day; account totals ride alongside.
   const days: Record<string, DayDetail> = {};
+  const rrAcc: Record<string, { sum: number; n: number }> = {};
   for (const t of closedTrades(tradesRaw as StatsTrade[])) {
     const key = t.closedAt.toISOString().slice(0, 10);
     if (!key.startsWith(requested)) continue;
     const accountId = (t as { accountId?: string | null }).accountId ?? null;
     const account = accountId ? nameOf.get(accountId) ?? null : null;
-    const d = (days[key] ??= { pnl: 0, count: 0, wins: 0, trades: [], accounts: [] });
+    const d = (days[key] ??= { pnl: 0, count: 0, wins: 0, rr: null, trades: [], accounts: [] });
     d.pnl += t.pnl;
     d.count += 1;
     if (t.pnl > 0) d.wins += 1;
     d.trades.push({ symbol: t.symbol, direction: t.direction, pnl: t.pnl, account, time: timeFmt.format(t.closedAt) });
+    const rr = (t as { rr?: number | null }).rr;
+    if (rr != null) {
+      const a = (rrAcc[key] ??= { sum: 0, n: 0 });
+      a.sum += rr;
+      a.n += 1;
+    }
     const acctName = account ?? "No account";
     const agg = d.accounts.find((a) => a.name === acctName);
     if (agg) {
@@ -72,6 +79,7 @@ export default async function CalendarPage({
       d.accounts.push({ name: acctName, pnl: t.pnl, count: 1 });
     }
   }
+  for (const [k, a] of Object.entries(rrAcc)) days[k].rr = a.sum / a.n;
 
   // Serialize the news Map to a plain object for the client grid.
   const newsLite: Record<string, DayNewsLite[]> = {};

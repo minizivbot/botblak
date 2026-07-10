@@ -131,6 +131,7 @@ model Trade {
   strategy       String?
   concepts       String? // comma-separated ICT concepts used on the trade
   mistakes       String? // comma-separated mistake tags (revenge, moved stop, ...)
+  rr             Float? // risk-reward multiple achieved on the trade (e.g. 2.5 = 2.5R)
   notes          String?
   screenshotPath String?
   source         String    @default("manual") // "manual" | "csv" | "alpaca" | "tradovate" | "seed"
