@@ -25,6 +25,8 @@ import {
   dailyPnlMap,
   closedTrades,
 } from "@/lib/stats";
+import { mistakeLedger } from "@/lib/mistakes";
+import { dailyGrades } from "@/lib/discipline";
 import { fmtMoney, fmtSignedMoney, fmtPct, fmtNum, fmtDuration, fmtDateTime } from "@/lib/format";
 import { FilterBar } from "@/components/FilterBar";
 import { StatTile } from "@/components/StatTile";
@@ -37,6 +39,13 @@ import { CalendarHeatmap } from "@/components/charts/CalendarHeatmap";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboard — TradeZone" };
+
+/** Tailwind classes for a discipline letter grade badge. */
+function gradeClass(grade: string): string {
+  if (grade === "A" || grade === "B") return "border-profit/50 bg-profit/10 text-profit";
+  if (grade === "C") return "border-accent/50 bg-accent/10 text-accent";
+  return "border-loss/50 bg-loss/10 text-loss";
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -124,6 +133,8 @@ export default async function DashboardPage({
   const byKillzone = pnlByKillzone(trades);
   const byConcept = pnlByConcept(trades);
   const daily = dailyPnlMap(trades);
+  const ledger = mistakeLedger(trades);
+  const grades = dailyGrades(trades, settings?.maxDailyLoss ?? null);
 
   const returnPct = startingBalance > 0 ? stats.totalPnl / startingBalance : null;
   const recent = closedTrades(trades).slice(-6).reverse();
@@ -311,6 +322,43 @@ export default async function DashboardPage({
         ))}
       </div>
 
+      {/* Discipline score */}
+      {grades.length > 0 && (
+        <section className="card">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="card-title mb-0">Discipline score</h2>
+            <span className="text-xs text-muted">Graded on your rules — killzones, trade count, loss limit, no revenge</span>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border text-3xl font-bold ${gradeClass(grades[0].grade)}`}>
+                {grades[0].grade}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-ink">{grades[0].date}</p>
+                <p className="text-xs text-muted">{grades[0].score}/100 · {grades[0].trades} trade{grades[0].trades === 1 ? "" : "s"}</p>
+                {grades[0].reasons.length === 0 ? (
+                  <p className="text-xs text-profit">Clean session — followed your plan.</p>
+                ) : (
+                  <p className="text-xs text-loss">{grades[0].reasons.join(" · ")}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {grades.slice(0, 14).map((g) => (
+                <span
+                  key={g.date}
+                  title={`${g.date} · ${g.score}/100${g.reasons.length ? " · " + g.reasons.join(", ") : " · clean"}`}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold ${gradeClass(g.grade)}`}
+                >
+                  {g.grade}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Equity + drawdown */}
       <section className="card">
         <h2 className="card-title">Equity curve</h2>
@@ -370,6 +418,26 @@ export default async function DashboardPage({
           <p className="mt-2 text-xs text-muted">
             Each trade&apos;s P&L counts toward every concept you tagged on it — see which reads actually pay.
           </p>
+        </section>
+      )}
+
+      {ledger.length > 0 && (
+        <section className="card">
+          <h2 className="card-title">What your mistakes cost</h2>
+          <ul className="space-y-2">
+            {ledger.map((row) => (
+              <li key={row.label} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-loss/40 bg-loss/10 px-2 py-0.5 text-xs font-medium text-ink">{row.label}</span>
+                  <span className="text-xs text-muted">{row.count} trade{row.count === 1 ? "" : "s"}</span>
+                </span>
+                <span className={`shrink-0 font-semibold tabular-nums ${row.pnl >= 0 ? "text-profit" : "text-loss"}`}>
+                  {fmtSignedMoney(row.pnl, currency)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-muted">Net P&L of the closed trades you tagged with each mistake — costliest first.</p>
         </section>
       )}
 

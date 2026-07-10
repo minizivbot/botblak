@@ -17,6 +17,7 @@ export const tradeSchema = z
     exitDate: z.coerce.date().nullish(),
     strategy: z.string().trim().max(50).nullish().transform((s) => s || null),
     concepts: z.string().trim().max(500).nullish().transform((s) => s || null),
+    mistakes: z.string().trim().max(300).nullish().transform((s) => s || null),
     accountId: z.string().trim().max(50).nullish().transform((s) => s || null),
     notes: z.string().trim().max(5000).nullish().transform((s) => s || null),
     screenshotPath: z.string().max(500).nullish().transform((s) => s || null),
@@ -52,6 +53,15 @@ export const settingsSchema = z.object({
   notifyDaily: z.boolean().optional(),
   notifyWeekly: z.boolean().optional(),
   notifyAlerts: z.boolean().optional(),
+});
+
+export const propTxnSchema = z.object({
+  firm: z.string().trim().min(1, "Firm is required").max(40, "Firm name is too long"),
+  kind: z.enum(["fee", "reset", "payout"]),
+  amount: z.coerce.number().positive("Amount must be positive"),
+  note: z.string().trim().max(200).nullish().transform((s) => s || null),
+  accountId: z.string().trim().max(50).nullish().transform((s) => s || null),
+  date: z.coerce.date().optional(),
 });
 
 export const usernameSchema = z.object({

@@ -7,27 +7,42 @@ import { computeStats, type StatsTrade } from "@/lib/stats";
 import { propStatus } from "@/lib/prop";
 import { fmtMoney, fmtSignedMoney, fmtPct } from "@/lib/format";
 import { AccountsManager } from "@/components/AccountsManager";
+import { PropDesk } from "@/components/PropDesk";
 import { DemoBanner } from "@/components/DemoBanner";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Accounts" };
 
 export default async function AccountsPage() {
-  const { userId, isDemo } = await getViewer();
+  const { userId, isDemo, isPro } = await getViewer();
   if (!userId) redirect("/login");
   if (!isDemo) await ensureDefaultAccount(userId);
 
-  const accounts = await prisma.account.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-    include: {
-      trades: {
-        select: { id: true, symbol: true, direction: true, entryPrice: true, exitPrice: true, size: true, fees: true, entryDate: true, exitDate: true, strategy: true },
+  const [accounts, settings, propTxns] = await Promise.all([
+    prisma.account.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        trades: {
+          select: { id: true, symbol: true, direction: true, entryPrice: true, exitPrice: true, size: true, fees: true, entryDate: true, exitDate: true, strategy: true },
+        },
       },
-    },
-  });
-  const settings = await prisma.settings.findUnique({ where: { userId } });
+    }),
+    prisma.settings.findUnique({ where: { userId } }),
+    prisma.propTxn.findMany({ where: { userId }, orderBy: { date: "desc" } }),
+  ]);
   const currency = settings?.currency ?? "USD";
+
+  const propAccounts = accounts.filter((a) => a.propStartBalance != null);
+  const propTxnDTOs = propTxns.map((t) => ({
+    id: t.id,
+    firm: t.firm,
+    kind: t.kind,
+    amount: t.amount,
+    note: t.note,
+    accountId: t.accountId,
+    date: t.date.toISOString(),
+  }));
 
   const cards = accounts.map((a) => {
     const stats = computeStats(a.trades as StatsTrade[], a.propStartBalance ?? 0);
@@ -100,6 +115,15 @@ export default async function AccountsPage() {
           </Link>
         ))}
       </div>
+
+      <PropDesk
+        isPro={isPro}
+        currency={currency}
+        txns={propTxnDTOs}
+        accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
+        propAccountCount={propAccounts.length}
+        fundedCount={propAccounts.filter((a) => a.propFunded).length}
+      />
 
       {isDemo ? (
         <p className="text-sm text-muted">

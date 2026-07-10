@@ -18,6 +18,7 @@ export type TradeDTO = {
   exitDate: string | null;
   strategy: string | null;
   concepts: string | null;
+  mistakes: string | null;
   notes: string | null;
   screenshotPath: string | null;
   source: string;
@@ -39,6 +40,7 @@ export function toTradeDTO(t: TradeWithAccount): TradeDTO {
     exitDate: t.exitDate?.toISOString() ?? null,
     strategy: t.strategy,
     concepts: t.concepts,
+    mistakes: t.mistakes,
     notes: t.notes,
     screenshotPath: t.screenshotPath,
     source: t.source,

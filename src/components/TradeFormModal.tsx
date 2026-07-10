@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { TradeDTO } from "@/lib/dto";
 import { ICT_SETUPS } from "@/lib/killzones";
+import { MISTAKES } from "@/lib/mistakes";
 import { INSTRUMENTS, findInstrument } from "@/lib/instruments";
 import { fmtSignedMoney } from "@/lib/format";
 
@@ -60,6 +61,9 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
     trade?.concepts ? trade.concepts.split(",").map((c) => c.trim()).filter(Boolean) : [],
   );
   const [customConcept, setCustomConcept] = useState("");
+  const [mistakes, setMistakes] = useState<string[]>(
+    trade?.mistakes ? trade.mistakes.split(",").map((m) => m.trim()).filter(Boolean) : [],
+  );
   const [file, setFile] = useState<File | null>(null);
   const [removeShot, setRemoveShot] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +88,9 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
 
   const toggleConcept = (c: string) =>
     setConcepts((list) => (list.includes(c) ? list.filter((x) => x !== c) : [...list, c]));
+
+  const toggleMistake = (m: string) =>
+    setMistakes((list) => (list.includes(m) ? list.filter((x) => x !== m) : [...list, m]));
 
   const saveConceptList = (next: string[]) => {
     setConceptList(next);
@@ -143,6 +150,7 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
         exitDate: hasExitDate ? new Date(form.exitDate + ":00Z").toISOString() : null,
         strategy: form.strategy || null,
         concepts: concepts.length ? concepts.join(", ") : null,
+        mistakes: mistakes.length ? mistakes.join(", ") : null,
         notes: form.notes || null,
         screenshotPath,
       };
@@ -332,6 +340,28 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
                 Add
               </button>
             </div>
+          </div>
+
+          <div>
+            <label className="field-label">Mistakes</label>
+            <div className="flex flex-wrap gap-1.5">
+              {MISTAKES.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => toggleMistake(m)}
+                  aria-pressed={mistakes.includes(m)}
+                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                    mistakes.includes(m)
+                      ? "border-loss/60 bg-loss/15 text-ink"
+                      : "border-edge text-muted hover:border-edge-strong hover:text-ink-2"
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted">Tag what went wrong — the dashboard tallies what each mistake costs you.</p>
           </div>
 
           <div>
