@@ -3,36 +3,13 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getViewer } from "@/lib/viewer";
 import { closedTrades, type StatsTrade } from "@/lib/stats";
-import { refreshNews, newsByDay, type DayNews } from "@/lib/news";
+import { refreshNews, newsByDay } from "@/lib/news";
 import { fmtSignedMoney } from "@/lib/format";
 import { DemoBanner } from "@/components/DemoBanner";
+import { CalendarGrid, type DayDetail, type DayNewsLite } from "@/components/CalendarGrid";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Calendar" };
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-/** "$1.2K" style compact money for tight calendar cells. */
-function compact(n: number): string {
-  const abs = Math.abs(n);
-  const s = abs >= 10000 ? `${(abs / 1000).toFixed(0)}K` : abs >= 1000 ? `${(abs / 1000).toFixed(1)}K` : abs.toFixed(0);
-  return `${n < 0 ? "-" : "+"}$${s}`;
-}
-
-function RedFolder({ events }: { events: DayNews }) {
-  const label = events.map((e) => `${e.time ? e.time + " " : ""}${e.currency} — ${e.title}`).join("\n");
-  return (
-    <span title={label} className="inline-flex items-center" aria-label="High-impact news">
-      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5">
-        <path
-          d="M1.5 3.5A1.5 1.5 0 013 2h3l1.5 1.8H13A1.5 1.5 0 0114.5 5.3v7.2A1.5 1.5 0 0113 14H3a1.5 1.5 0 01-1.5-1.5v-9z"
-          fill="#ef4444"
-        />
-      </svg>
-      {events.length > 1 && <span className="ml-0.5 text-[9px] font-bold text-loss">{events.length}</span>}
-    </span>
-  );
-}
 
 export default async function CalendarPage({
   searchParams,
@@ -63,20 +40,43 @@ export default async function CalendarPage({
 
   // Pull the red-folder feed (no-op when fresh/unreachable), then this month's data.
   await refreshNews();
-  const [news, tradesRaw] = await Promise.all([
+  const [news, tradesRaw, accounts, settings] = await Promise.all([
     newsByDay(requested),
     prisma.trade.findMany({ where: { userId: viewer.userId } }),
+    prisma.account.findMany({ where: { userId: viewer.userId }, select: { id: true, name: true } }),
+    prisma.settings.findUnique({ where: { userId: viewer.userId }, select: { currency: true } }),
   ]);
+  const currency = settings?.currency ?? "USD";
+  const nameOf = new Map(accounts.map((a) => [a.id, a.name]));
+  const timeFmt = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false });
 
-  // Daily net P&L + counts, keyed "YYYY-MM-DD" by close date.
-  const days = new Map<string, { pnl: number; count: number }>();
+  // Rich per-day breakdown, keyed "YYYY-MM-DD" by (UTC) close date. Trades are
+  // chronological within the day; account totals ride alongside.
+  const days: Record<string, DayDetail> = {};
   for (const t of closedTrades(tradesRaw as StatsTrade[])) {
     const key = t.closedAt.toISOString().slice(0, 10);
     if (!key.startsWith(requested)) continue;
-    const d = days.get(key) ?? { pnl: 0, count: 0 };
+    const accountId = (t as { accountId?: string | null }).accountId ?? null;
+    const account = accountId ? nameOf.get(accountId) ?? null : null;
+    const d = (days[key] ??= { pnl: 0, count: 0, wins: 0, trades: [], accounts: [] });
     d.pnl += t.pnl;
     d.count += 1;
-    days.set(key, d);
+    if (t.pnl > 0) d.wins += 1;
+    d.trades.push({ symbol: t.symbol, direction: t.direction, pnl: t.pnl, account, time: timeFmt.format(t.closedAt) });
+    const acctName = account ?? "No account";
+    const agg = d.accounts.find((a) => a.name === acctName);
+    if (agg) {
+      agg.pnl += t.pnl;
+      agg.count += 1;
+    } else {
+      d.accounts.push({ name: acctName, pnl: t.pnl, count: 1 });
+    }
+  }
+
+  // Serialize the news Map to a plain object for the client grid.
+  const newsLite: Record<string, DayNewsLite[]> = {};
+  for (const [k, evts] of news) {
+    newsLite[k] = evts.map((e) => ({ time: e.time, currency: e.currency, title: e.title }));
   }
 
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -91,11 +91,10 @@ export default async function CalendarPage({
   const weeks: (number | null)[][] = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
-  const key = (d: number) => `${requested}-${String(d).padStart(2, "0")}`;
-  const monthTotal = [...days.values()].reduce((s, d) => s + d.pnl, 0);
-  const greenDays = [...days.values()].filter((d) => d.pnl > 0).length;
-  const redDays = [...days.values()].filter((d) => d.pnl < 0).length;
-  const isToday = (d: number) => key(d) === nyToday;
+  const detailList = Object.values(days);
+  const monthTotal = detailList.reduce((s, d) => s + d.pnl, 0);
+  const greenDays = detailList.filter((d) => d.pnl > 0).length;
+  const redDays = detailList.filter((d) => d.pnl < 0).length;
 
   return (
     <div className="space-y-4">
@@ -123,7 +122,7 @@ export default async function CalendarPage({
         <div className="card">
           <p className="text-xs text-muted">Month P&L</p>
           <p className={`text-xl font-bold ${monthTotal > 0 ? "text-profit" : monthTotal < 0 ? "text-loss" : ""}`}>
-            {fmtSignedMoney(monthTotal)}
+            {fmtSignedMoney(monthTotal, currency)}
           </p>
         </div>
         <div className="card">
@@ -136,72 +135,18 @@ export default async function CalendarPage({
         </div>
       </div>
 
-      <div className="card overflow-x-auto p-2 sm:p-3">
-        <div className="min-w-[640px]">
-          <div className="grid grid-cols-[repeat(7,1fr)_5rem] gap-1.5 pb-1.5 text-center text-[11px] font-semibold text-muted">
-            {WEEKDAYS.map((d) => (
-              <span key={d}>{d}</span>
-            ))}
-            <span>Week</span>
-          </div>
-          <div className="space-y-1.5">
-            {weeks.map((week, wi) => {
-              const weekTotal = week.reduce((s: number, d) => s + (d ? (days.get(key(d))?.pnl ?? 0) : 0), 0);
-              const weekHasTrades = week.some((d) => d && days.has(key(d)));
-              return (
-                <div key={wi} className="grid grid-cols-[repeat(7,1fr)_5rem] gap-1.5">
-                  {week.map((d, di) => {
-                    if (d == null) return <div key={di} className="min-h-16 rounded-lg" />;
-                    const data = days.get(key(d));
-                    const events = news.get(key(d));
-                    const toneCls = !data
-                      ? "border-edge bg-raised/20"
-                      : data.pnl > 0
-                        ? "border-profit/40 bg-profit/10"
-                        : data.pnl < 0
-                          ? "border-loss/40 bg-loss/10"
-                          : "border-edge bg-raised/40";
-                    return (
-                      <div
-                        key={di}
-                        className={`min-h-16 rounded-lg border px-1.5 py-1 ${toneCls} ${isToday(d) ? "ring-1 ring-accent" : ""}`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <span className={`text-[11px] ${isToday(d) ? "font-bold text-accent" : "text-muted"}`}>{d}</span>
-                          {events && <RedFolder events={events} />}
-                        </div>
-                        {data && (
-                          <>
-                            <p className={`text-xs font-bold tabular-nums ${data.pnl > 0 ? "text-profit" : data.pnl < 0 ? "text-loss" : "text-ink-2"}`}>
-                              {compact(data.pnl)}
-                            </p>
-                            <p className="text-[10px] text-muted">
-                              {data.count} trade{data.count === 1 ? "" : "s"}
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                  <div className="flex min-h-16 flex-col items-center justify-center rounded-lg border border-edge bg-raised/30 px-1">
-                    {weekHasTrades ? (
-                      <p className={`text-xs font-bold tabular-nums ${weekTotal > 0 ? "text-profit" : weekTotal < 0 ? "text-loss" : "text-ink-2"}`}>
-                        {compact(weekTotal)}
-                      </p>
-                    ) : (
-                      <span className="text-[10px] text-muted">—</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <CalendarGrid
+        month={requested}
+        currency={currency}
+        weeks={weeks}
+        days={days}
+        news={newsLite}
+        nyToday={nyToday}
+      />
 
       <p className="text-[11px] text-muted">
-        Red-folder events come from the ForexFactory economic calendar (high impact only) and refresh automatically a
-        few times a day. Times shown in the tooltip are New York time.
+        Tap any day with trades to see its full breakdown and download a shareable P&L image. Red-folder events come
+        from the ForexFactory economic calendar (high impact only) and refresh automatically a few times a day.
       </p>
     </div>
   );
