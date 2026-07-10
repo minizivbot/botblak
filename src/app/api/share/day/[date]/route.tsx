@@ -18,11 +18,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
   const { date } = await ctx.params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return new Response("Bad date", { status: 400 });
 
-  const [tradesRaw, accounts, settings, userCount] = await Promise.all([
+  const [tradesRaw, accounts, settings] = await Promise.all([
     prisma.trade.findMany({ where: { userId } }),
     prisma.account.findMany({ where: { userId }, select: { id: true, name: true } }),
     prisma.settings.findUnique({ where: { userId } }),
-    prisma.user.count(),
   ]);
   const currency = settings?.currency ?? "USD";
   const nameOf = new Map(accounts.map((a) => [a.id, a.name]));
@@ -38,6 +37,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
   // single trade's R:R. Trades without an R:R value are ignored.
   const rrVals = dayTrades.map((t) => (t as { rr?: number | null }).rr).filter((v): v is number => v != null);
   const dayRR = rrVals.length ? rrVals.reduce((s, v) => s + v, 0) / rrVals.length : null;
+  // How many accounts placed at least one trade today (null = unassigned bucket).
+  const accountsTraded = new Set(dayTrades.map((t) => t.accountId ?? "none")).size;
 
   const green = "#22c55e";
   const red = "#ef4444";
@@ -62,7 +63,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
   const headSize = headStr.length <= 8 ? 96 : headStr.length <= 11 ? 78 : headStr.length <= 14 ? 62 : 52;
 
   const stats = [
-    { label: "Traders", value: userCount.toLocaleString("en-US"), color: ink },
+    { label: accountsTraded === 1 ? "Account" : "Accounts", value: String(accountsTraded), color: ink },
     {
       label: rrVals.length > 1 ? "Avg R:R" : "R:R",
       value: dayRR == null ? "—" : `${dayRR.toFixed(2)}R`,
