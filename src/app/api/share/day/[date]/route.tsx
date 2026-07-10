@@ -18,12 +18,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
   const { date } = await ctx.params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return new Response("Bad date", { status: 400 });
 
-  const [tradesRaw, accounts, settings] = await Promise.all([
+  const [tradesRaw, accounts, settings, userCount] = await Promise.all([
     prisma.trade.findMany({ where: { userId } }),
     prisma.account.findMany({ where: { userId }, select: { id: true, name: true } }),
     prisma.settings.findUnique({ where: { userId } }),
+    prisma.user.count(),
   ]);
   const currency = settings?.currency ?? "USD";
+  const startingBalance = settings?.startingBalance ?? 10000;
   const nameOf = new Map(accounts.map((a) => [a.id, a.name]));
 
   // Match the calendar's keying: UTC close date.
@@ -33,9 +35,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
     .sort((a, b) => b.pnl - a.pnl);
 
   const total = dayTrades.reduce((s, t) => s + t.pnl, 0);
-  const wins = dayTrades.filter((t) => t.pnl > 0).length;
-  const winRate = dayTrades.length ? Math.round((wins / dayTrades.length) * 100) : 0;
-  const best = dayTrades.length ? Math.max(...dayTrades.map((t) => t.pnl)) : 0;
+  // Day return as a % of the account — meaningful even on a single trade.
+  const returnPct = startingBalance > 0 ? (total / startingBalance) * 100 : 0;
 
   const green = "#22c55e";
   const red = "#ef4444";
@@ -55,10 +56,17 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
   const shown = dayTrades.slice(0, 7);
   const rest = dayTrades.length - shown.length;
 
+  // Headline must stay on one line — scale the font to its length.
+  const headStr = dayTrades.length ? fmtSignedMoney(total, currency) : "No trades";
+  const headSize = headStr.length <= 8 ? 96 : headStr.length <= 11 ? 78 : headStr.length <= 14 ? 62 : 52;
+
   const stats = [
     { label: "Trades", value: String(dayTrades.length), color: ink },
-    { label: "Win rate", value: `${winRate}%`, color: winRate >= 50 ? green : muted },
-    { label: "Best trade", value: dayTrades.length ? fmtSignedMoney(best, currency) : "—", color: best > 0 ? green : ink },
+    {
+      label: "Return",
+      value: dayTrades.length ? `${returnPct >= 0 ? "+" : ""}${returnPct.toFixed(1)}%` : "—",
+      color: returnPct > 0 ? green : returnPct < 0 ? red : ink,
+    },
   ];
 
   return new ImageResponse(
@@ -89,8 +97,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
           {/* Left: headline */}
           <div style={{ display: "flex", flexDirection: "column", width: 430 }}>
             <div style={{ fontSize: 26, color: muted, fontWeight: 600 }}>{dateLabel}</div>
-            <div style={{ fontSize: 96, fontWeight: 800, letterSpacing: -3, color: tone, lineHeight: 1.02, marginTop: 6 }}>
-              {dayTrades.length ? fmtSignedMoney(total, currency) : "No trades"}
+            <div style={{ fontSize: headSize, fontWeight: 800, letterSpacing: -3, color: tone, lineHeight: 1.02, marginTop: 6, whiteSpace: "nowrap" }}>
+              {headStr}
             </div>
             <div style={{ display: "flex", gap: 14, marginTop: 28 }}>
               {stats.map((s, i) => (
@@ -174,7 +182,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ date: string }
 
         {/* Footer */}
         <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 22, color: muted }}>
-          <span>{wins}/{dayTrades.length} winners · Track your edge</span>
+          <span>Join {userCount.toLocaleString("en-US")} trader{userCount === 1 ? "" : "s"} on TradeZone</span>
           <span style={{ color: "#4a94ec", fontWeight: 700 }}>{SITE}</span>
         </div>
       </div>

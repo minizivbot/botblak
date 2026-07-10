@@ -151,8 +151,6 @@ function DayModal({
     year: "numeric",
     timeZone: "UTC",
   });
-  const winRate = detail.count ? Math.round((detail.wins / detail.count) * 100) : 0;
-
   async function copyImage() {
     try {
       const res = await fetch(src);
@@ -172,7 +170,7 @@ function DayModal({
           <div>
             <h2 className="text-base font-semibold">{label}</h2>
             <p className="text-xs text-muted">
-              {detail.count} trade{detail.count === 1 ? "" : "s"} · {winRate}% win rate
+              {detail.count} trade{detail.count === 1 ? "" : "s"}
             </p>
           </div>
           <span className={`text-2xl font-bold tabular-nums ${detail.pnl > 0 ? "text-profit" : detail.pnl < 0 ? "text-loss" : "text-ink-2"}`}>
