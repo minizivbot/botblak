@@ -33,10 +33,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { StatTile } from "@/components/StatTile";
 import { EquityCurve } from "@/components/charts/EquityCurve";
 import { DrawdownChart } from "@/components/charts/DrawdownChart";
-import { PeriodPnlChart } from "@/components/charts/PeriodPnlChart";
-import { GroupPnlChart } from "@/components/charts/GroupPnlChart";
-import { WeekdayPnlChart } from "@/components/charts/WeekdayPnlChart";
-import { CalendarHeatmap } from "@/components/charts/CalendarHeatmap";
+import { DashboardBreakdowns } from "@/components/DashboardBreakdowns";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboard — TradeZone" };
@@ -224,7 +221,7 @@ export default async function DashboardPage({
             <span>⚡</span> Insights — what your trades are telling you
           </h2>
           <ul className="space-y-2.5">
-            {insights.map((ins, i) => (
+            {insights.slice(0, 3).map((ins, i) => (
               <li key={i} className="flex gap-2.5 text-sm">
                 <span className="shrink-0">{ins.emoji}</span>
                 <span className={ins.tone === "bad" ? "text-ink-2" : ins.tone === "good" ? "text-ink" : "text-ink-2"}>
@@ -236,8 +233,8 @@ export default async function DashboardPage({
         </section>
       )}
 
-      {/* Stat tiles */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {/* Core stats — the four numbers that matter */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile
           label="Win rate"
           value={stats.winRate == null ? "—" : fmtPct(stats.winRate)}
@@ -262,123 +259,93 @@ export default async function DashboardPage({
           sub="peak-to-trough on equity"
           tone={stats.maxDrawdown > 0 ? "negative" : "neutral"}
         />
-        <StatTile
-          label="Average win / loss"
-          value={
-            stats.avgWin == null && stats.avgLoss == null
-              ? "—"
-              : `${stats.avgWin == null ? "—" : fmtMoney(stats.avgWin, currency)} / ${stats.avgLoss == null ? "—" : fmtMoney(stats.avgLoss, currency)}`
-          }
-          sub={
-            stats.avgWin != null && stats.avgLoss != null && stats.avgLoss > 0
-              ? `${fmtNum(stats.avgWin / stats.avgLoss)}R reward-to-risk`
-              : undefined
-          }
-        />
-        <StatTile
-          label="Best / worst trade"
-          value={stats.bestTrade ? fmtSignedMoney(stats.bestTrade.pnl, currency) : "—"}
-          sub={
-            stats.bestTrade && stats.worstTrade
-              ? `${stats.bestTrade.symbol} · worst ${fmtSignedMoney(stats.worstTrade.pnl, currency)} (${stats.worstTrade.symbol})`
-              : undefined
-          }
-          tone={tone(stats.bestTrade?.pnl)}
-        />
-        <StatTile
-          label="Avg hold time"
-          value={stats.avgHoldMs == null ? "—" : fmtDuration(stats.avgHoldMs)}
-          sub="entry to exit"
-        />
-        <StatTile
-          label="Streaks"
-          value={
-            stats.currentStreak === 0
-              ? "—"
-              : `${Math.abs(stats.currentStreak)} ${stats.currentStreak > 0 ? (Math.abs(stats.currentStreak) > 1 ? "wins" : "win") : Math.abs(stats.currentStreak) > 1 ? "losses" : "loss"}`
-          }
-          sub={`best ${stats.maxWinStreak} wins · worst ${stats.maxLossStreak} losses`}
-          tone={tone(stats.currentStreak)}
-        />
       </div>
 
-      {/* Long vs short */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        {(
-          [
-            ["Long", stats.long, "badge-long"],
-            ["Short", stats.short, "badge-short"],
-          ] as const
-        ).map(([label, s, badge]) => (
-          <div key={label} className="card flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className={badge}>{label}</span>
-              <span className="text-sm text-muted">
-                {s.count} closed{s.winRate != null && <> · {fmtPct(s.winRate)} win rate</>}
+      {/* Everything else worth knowing, one quiet line */}
+      {stats.closedCount > 0 && (
+        <div className="card flex flex-wrap items-center gap-x-6 gap-y-2 !py-3 text-sm">
+          {[
+            [
+              "Avg win / loss",
+              stats.avgWin == null && stats.avgLoss == null
+                ? null
+                : `${stats.avgWin == null ? "—" : fmtMoney(stats.avgWin, currency)} / ${stats.avgLoss == null ? "—" : fmtMoney(stats.avgLoss, currency)}`,
+            ],
+            ["Avg R:R (week)", rrAvg.week == null ? null : `${rrAvg.week.toFixed(2)}R`],
+            ["Avg R:R (month)", rrAvg.month == null ? null : `${rrAvg.month.toFixed(2)}R`],
+            ["Hold time", stats.avgHoldMs == null ? null : fmtDuration(stats.avgHoldMs)],
+            ["Best", stats.bestTrade ? `${fmtSignedMoney(stats.bestTrade.pnl, currency)} (${stats.bestTrade.symbol})` : null],
+            ["Worst", stats.worstTrade ? `${fmtSignedMoney(stats.worstTrade.pnl, currency)} (${stats.worstTrade.symbol})` : null],
+            ["Long", stats.long.count ? fmtSignedMoney(stats.long.pnl, currency) : null],
+            ["Short", stats.short.count ? fmtSignedMoney(stats.short.pnl, currency) : null],
+            [
+              "Streak",
+              stats.currentStreak === 0
+                ? null
+                : `${Math.abs(stats.currentStreak)} ${stats.currentStreak > 0 ? "win" : "loss"}${Math.abs(stats.currentStreak) > 1 ? "s" : ""}`,
+            ],
+          ]
+            .filter(([, v]) => v != null)
+            .map(([label, value]) => (
+              <span key={label as string} className="whitespace-nowrap">
+                <span className="text-xs text-muted">{label}</span>{" "}
+                <span className="font-semibold text-ink-2">{value}</span>
               </span>
-            </div>
-            <span className={`text-lg font-semibold ${s.pnl > 0 ? "text-profit" : s.pnl < 0 ? "text-loss" : "text-ink"}`}>
-              {s.count ? fmtSignedMoney(s.pnl, currency) : "—"}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Average R:R */}
-      {(rrAvg.week != null || rrAvg.month != null) && (
-        <section className="card">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="card-title mb-0">Average R:R</h2>
-            <span className="text-xs text-muted">Reward-to-risk you logged on your trades</span>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-edge bg-raised/40 px-3 py-2.5">
-              <p className="text-xs text-muted">This week</p>
-              <p className="mt-0.5 text-lg font-bold text-ink">{rrAvg.week == null ? "—" : `${rrAvg.week.toFixed(2)}R`}</p>
-            </div>
-            <div className="rounded-xl border border-edge bg-raised/40 px-3 py-2.5">
-              <p className="text-xs text-muted">This month</p>
-              <p className="mt-0.5 text-lg font-bold text-ink">{rrAvg.month == null ? "—" : `${rrAvg.month.toFixed(2)}R`}</p>
-            </div>
-          </div>
-        </section>
+            ))}
+        </div>
       )}
 
-      {/* Discipline score */}
-      {grades.length > 0 && (
-        <section className="card">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="card-title mb-0">Discipline score</h2>
-            <span className="text-xs text-muted">Graded on your rules — killzones, trade count, loss limit, no revenge</span>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-4">
-            <div className="flex items-center gap-3">
-              <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border text-3xl font-bold ${gradeClass(grades[0].grade)}`}>
-                {grades[0].grade}
+      {/* Discipline + mistakes, side by side */}
+      {(grades.length > 0 || ledger.length > 0) && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {grades.length > 0 && (
+            <section className="card">
+              <h2 className="card-title">Discipline score</h2>
+              <div className="flex items-center gap-3">
+                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border text-2xl font-bold ${gradeClass(grades[0].grade)}`}>
+                  {grades[0].grade}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink">{grades[0].date} · {grades[0].score}/100</p>
+                  {grades[0].reasons.length === 0 ? (
+                    <p className="text-xs text-profit">Clean session — followed your plan.</p>
+                  ) : (
+                    <p className="truncate text-xs text-loss">{grades[0].reasons.join(" · ")}</p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-ink">{grades[0].date}</p>
-                <p className="text-xs text-muted">{grades[0].score}/100 · {grades[0].trades} trade{grades[0].trades === 1 ? "" : "s"}</p>
-                {grades[0].reasons.length === 0 ? (
-                  <p className="text-xs text-profit">Clean session — followed your plan.</p>
-                ) : (
-                  <p className="text-xs text-loss">{grades[0].reasons.join(" · ")}</p>
-                )}
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {grades.slice(0, 10).map((g) => (
+                  <span
+                    key={g.date}
+                    title={`${g.date} · ${g.score}/100${g.reasons.length ? " · " + g.reasons.join(", ") : " · clean"}`}
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg border text-xs font-bold ${gradeClass(g.grade)}`}
+                  >
+                    {g.grade}
+                  </span>
+                ))}
               </div>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {grades.slice(0, 14).map((g) => (
-                <span
-                  key={g.date}
-                  title={`${g.date} · ${g.score}/100${g.reasons.length ? " · " + g.reasons.join(", ") : " · clean"}`}
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold ${gradeClass(g.grade)}`}
-                >
-                  {g.grade}
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
+            </section>
+          )}
+          {ledger.length > 0 && (
+            <section className="card">
+              <h2 className="card-title">What your mistakes cost</h2>
+              <ul className="space-y-2">
+                {ledger.slice(0, 5).map((row) => (
+                  <li key={row.label} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-loss/40 bg-loss/10 px-2 py-0.5 text-xs font-medium text-ink">{row.label}</span>
+                      <span className="text-xs text-muted">{row.count} trade{row.count === 1 ? "" : "s"}</span>
+                    </span>
+                    <span className={`shrink-0 font-semibold tabular-nums ${row.pnl >= 0 ? "text-profit" : "text-loss"}`}>
+                      {fmtSignedMoney(row.pnl, currency)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       )}
 
       {/* Equity + drawdown */}
@@ -397,71 +364,17 @@ export default async function DashboardPage({
         )}
       </section>
 
-      {/* P&L over time + heatmap */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="card">
-          <h2 className="card-title mb-1">Net P&L by period</h2>
-          <PeriodPnlChart data={periodData} currency={currency} />
-        </section>
-        <section className="card">
-          <h2 className="card-title">Daily P&L calendar</h2>
-          <CalendarHeatmap daily={daily} currency={currency} />
-        </section>
-      </div>
-
-      {/* Groups */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="card">
-          <h2 className="card-title">P&L by killzone</h2>
-          <GroupPnlChart rows={byKillzone} currency={currency} />
-          <p className="mt-2 text-xs text-muted">By entry time, New York time — ICT killzone windows.</p>
-        </section>
-        <section className="card">
-          <h2 className="card-title">P&L by setup</h2>
-          <GroupPnlChart rows={byStrategy} currency={currency} />
-        </section>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="card">
-          <h2 className="card-title">P&L by symbol</h2>
-          <GroupPnlChart rows={bySymbol} currency={currency} />
-        </section>
-        <section className="card">
-          <h2 className="card-title">P&L by weekday</h2>
-          <WeekdayPnlChart rows={byWeekday} currency={currency} />
-        </section>
-      </div>
-
-      {byConcept.length > 0 && (
-        <section className="card">
-          <h2 className="card-title">P&L by ICT concept</h2>
-          <GroupPnlChart rows={byConcept} currency={currency} />
-          <p className="mt-2 text-xs text-muted">
-            Each trade&apos;s P&L counts toward every concept you tagged on it — see which reads actually pay.
-          </p>
-        </section>
-      )}
-
-      {ledger.length > 0 && (
-        <section className="card">
-          <h2 className="card-title">What your mistakes cost</h2>
-          <ul className="space-y-2">
-            {ledger.map((row) => (
-              <li key={row.label} className="flex items-center justify-between gap-3 text-sm">
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-loss/40 bg-loss/10 px-2 py-0.5 text-xs font-medium text-ink">{row.label}</span>
-                  <span className="text-xs text-muted">{row.count} trade{row.count === 1 ? "" : "s"}</span>
-                </span>
-                <span className={`shrink-0 font-semibold tabular-nums ${row.pnl >= 0 ? "text-profit" : "text-loss"}`}>
-                  {fmtSignedMoney(row.pnl, currency)}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-muted">Net P&L of the closed trades you tagged with each mistake — costliest first.</p>
-        </section>
-      )}
+      {/* Every P&L breakdown, one tabbed card */}
+      <DashboardBreakdowns
+        currency={currency}
+        period={periodData}
+        daily={daily}
+        killzone={byKillzone}
+        setup={byStrategy}
+        symbol={bySymbol}
+        weekday={byWeekday}
+        concept={byConcept}
+      />
 
       {/* Activity */}
       <div className="grid gap-4 lg:grid-cols-2">

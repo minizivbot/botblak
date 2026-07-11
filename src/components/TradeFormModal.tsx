@@ -69,6 +69,11 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
   const [removeShot, setRemoveShot] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Optional extras start folded so logging a trade takes seconds; open
+  // automatically when editing a trade that already uses them.
+  const [showMore, setShowMore] = useState(
+    !!(trade && (trade.concepts || trade.mistakes || trade.notes || trade.screenshotPath)),
+  );
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -313,6 +318,16 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
             </div>
           </div>
 
+          <button
+            type="button"
+            onClick={() => setShowMore(!showMore)}
+            className="flex w-full items-center justify-between rounded-lg border border-edge bg-raised/40 px-3 py-2 text-sm text-ink-2 transition-colors hover:border-edge-strong"
+          >
+            <span>Concepts, mistakes, notes &amp; screenshot</span>
+            <span className="text-xs text-muted">{showMore ? "▲ hide" : "▼ show"}</span>
+          </button>
+
+          {showMore && (<>
           <div>
             <label className="field-label">Concepts used</label>
             <div className="flex flex-wrap gap-1.5">
@@ -406,6 +421,7 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
             />
             <p className="mt-1 text-xs text-muted">PNG/JPEG/WebP/GIF, max 5 MB.</p>
           </div>
+          </>)}
 
           {error && <p className="rounded-lg border border-loss/40 bg-loss/10 px-3 py-2 text-sm text-loss">{error}</p>}
 
