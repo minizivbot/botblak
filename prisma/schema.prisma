@@ -179,6 +179,7 @@ model SiteConfig {
   registrationOpen   Boolean @default(true) // allow new sign-ups
   leaderboardEnabled Boolean @default(true) // legacy (leaderboard removed); column kept to avoid a destructive migration
   propFirmsEnabled   Boolean @default(true) // show the Prop Firms page + nav item
+  proForAll          Boolean @default(false) // admin switch: every Pro feature is free for everyone
   updatedAt          DateTime @updatedAt
 }
 

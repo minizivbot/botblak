@@ -10,6 +10,7 @@ const schema = z.object({
   announcementLevel: z.enum(["info", "warning", "success"]).optional(),
   registrationOpen: z.boolean().optional(),
   propFirmsEnabled: z.boolean().optional(),
+  proForAll: z.boolean().optional(),
 });
 
 /** Admin: update the site-wide config that affects every visitor. */

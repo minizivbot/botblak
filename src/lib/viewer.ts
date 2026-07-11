@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { requireUserId } from "./auth";
 import { isUserAdmin } from "./admin";
-import { planIsPro } from "./plan";
+import { planIsPro, proForAll } from "./plan";
 
 export type Viewer = {
   /** The user whose data to render — the signed-in user, or the demo user for guests. */
@@ -33,7 +33,7 @@ export async function getViewer(): Promise<Viewer> {
       username: user?.username ?? null,
       isDemo: false,
       isAdmin,
-      isPro: isAdmin || planIsPro(user),
+      isPro: isAdmin || planIsPro(user) || (await proForAll()),
     };
   }
   const demo = await prisma.user.findUnique({ where: { username: "demo" }, select: { id: true } });

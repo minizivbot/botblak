@@ -8,6 +8,7 @@ type Config = {
   announcementLevel: string;
   registrationOpen: boolean;
   propFirmsEnabled: boolean;
+  proForAll: boolean;
 };
 
 /** Admin controls that change the whole site for every visitor. */
@@ -17,6 +18,7 @@ export function AdminSiteControls({ initial }: { initial: Config }) {
   const [level, setLevel] = useState(initial.announcementLevel);
   const [registrationOpen, setRegistrationOpen] = useState(initial.registrationOpen);
   const [propFirmsEnabled, setPropFirmsEnabled] = useState(initial.propFirmsEnabled);
+  const [proForAll, setProForAll] = useState(initial.proForAll);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -31,6 +33,7 @@ export function AdminSiteControls({ initial }: { initial: Config }) {
         announcementLevel: level,
         registrationOpen,
         propFirmsEnabled,
+        proForAll,
       }),
     });
     setSaving(false);
@@ -88,6 +91,19 @@ export function AdminSiteControls({ initial }: { initial: Config }) {
         <span className="text-sm">
           <span className="font-medium text-ink">Prop Firms page enabled</span>
           <span className="block text-xs text-muted">Uncheck to hide the Prop Firms page and its menu item from everyone.</span>
+        </span>
+      </label>
+
+      <label className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 ${proForAll ? "border-yellow-500/50 bg-yellow-500/10" : "border-edge bg-raised/40"}`}>
+        <input type="checkbox" checked={proForAll} onChange={(e) => setProForAll(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#eab308]" />
+        <span className="text-sm">
+          <span className="font-medium text-ink">
+            PRO free for everyone {proForAll && <span className="ml-1 rounded-full bg-yellow-500/20 px-2 py-0.5 text-[10px] font-bold text-yellow-500">ACTIVE</span>}
+          </span>
+          <span className="block text-xs text-muted">
+            While on, every Pro feature (Prop Desk, AI coach, broker sync, unlimited accounts, themes…) is unlocked
+            for all users — great for launches and promos. Turn off to restore normal Pro gating.
+          </span>
         </span>
       </label>
 

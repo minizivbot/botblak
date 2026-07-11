@@ -5,6 +5,7 @@ export type SiteConfig = {
   announcementLevel: string;
   registrationOpen: boolean;
   propFirmsEnabled: boolean;
+  proForAll: boolean;
 };
 
 const DEFAULTS: SiteConfig = {
@@ -12,6 +13,7 @@ const DEFAULTS: SiteConfig = {
   announcementLevel: "info",
   registrationOpen: true,
   propFirmsEnabled: true,
+  proForAll: false,
 };
 
 /** The single site-wide config row, created lazily with defaults. */
@@ -24,6 +26,7 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       announcementLevel: row.announcementLevel,
       registrationOpen: row.registrationOpen,
       propFirmsEnabled: row.propFirmsEnabled,
+      proForAll: row.proForAll,
     };
   } catch {
     // If the table isn't migrated yet, fall back to safe defaults.

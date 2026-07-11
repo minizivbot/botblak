@@ -26,12 +26,27 @@ export function planIsPro(user: PlanUser | null): boolean {
   return user.proUntil == null || user.proUntil.getTime() > Date.now();
 }
 
+/** True while the admin "Pro free for everyone" site switch is on. */
+export async function proForAll(): Promise<boolean> {
+  try {
+    const row = await prisma.siteConfig.findUnique({
+      where: { id: "singleton" },
+      select: { proForAll: true },
+    });
+    return row?.proForAll ?? false;
+  } catch {
+    return false; // table not migrated yet — behave as if the switch is off
+  }
+}
+
 /**
- * True if the user has Pro access: an active "pro" plan, or admin (admins
- * always get every feature so the owner is never locked out of their own site).
+ * True if the user has Pro access: an active "pro" plan, admin (admins always
+ * get every feature so the owner is never locked out of their own site), or
+ * the site-wide "Pro free for everyone" switch.
  */
 export async function isProUser(userId: string | null): Promise<boolean> {
   if (!userId) return false;
+  if (await proForAll()) return true;
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { plan: true, proUntil: true },
