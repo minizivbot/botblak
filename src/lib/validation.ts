@@ -23,6 +23,8 @@ export const tradeSchema = z
       .optional()
       .transform((v) => (typeof v === "number" ? v : null)),
     accountId: z.string().trim().max(50).nullish().transform((s) => s || null),
+    playbookId: z.string().trim().max(50).nullish().transform((s) => s || null),
+    rulesHit: z.string().trim().max(100).nullish().transform((s) => s || null),
     notes: z.string().trim().max(5000).nullish().transform((s) => s || null),
     screenshotPath: z.string().max(500).nullish().transform((s) => s || null),
   })

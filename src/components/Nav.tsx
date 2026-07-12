@@ -91,6 +91,7 @@ const icons: Record<string, React.ReactNode> = {
 const links = [
   { href: "/", label: "Today", icon: "today", section: "Trade" },
   { href: "/trades", label: "Trades", icon: "trades", section: "Trade" },
+  { href: "/playbooks", label: "Playbooks", icon: "learn", section: "Trade" },
   { href: "/review", label: "Review", icon: "dashboard", section: "Trade" },
   { href: "/calendar", label: "Calendar", icon: "calendar", section: "Trade" },
   { href: "/accounts", label: "Business", icon: "accounts", section: "Business" },

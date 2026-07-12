@@ -8,11 +8,13 @@ import { INSTRUMENTS, findInstrument } from "@/lib/instruments";
 import { fmtSignedMoney } from "@/lib/format";
 
 type AccountOption = { id: string; name: string; isCopy: boolean };
+type PlaybookOption = { id: string; name: string; emoji: string; rules: string[] };
 
 type Props = {
   trade: TradeDTO | null; // null = create
   accounts: AccountOption[];
   userConcepts: string[];
+  playbooks?: PlaybookOption[];
   currency: string;
   onClose: () => void;
   onSaved: () => void;
@@ -27,7 +29,7 @@ function nowInput(): string {
   return new Date().toISOString().slice(0, 16);
 }
 
-export function TradeFormModal({ trade, accounts, userConcepts, currency, onClose, onSaved }: Props) {
+export function TradeFormModal({ trade, accounts, userConcepts, playbooks = [], currency, onClose, onSaved }: Props) {
   const copyAccounts = accounts.filter((a) => a.isCopy);
   const soloAccounts = accounts.filter((a) => !a.isCopy);
   // New trades default to "all copy accounts" when copy accounts exist, else
@@ -65,6 +67,15 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
   const [mistakes, setMistakes] = useState<string[]>(
     trade?.mistakes ? trade.mistakes.split(",").map((m) => m.trim()).filter(Boolean) : [],
   );
+  const [playbookId, setPlaybookId] = useState<string>(trade?.playbookId ?? "");
+  const [rulesHit, setRulesHit] = useState<Set<number>>(
+    new Set(
+      (trade?.rulesHit ?? "")
+        .split(",")
+        .map((s) => Number(s.trim()))
+        .filter((n) => Number.isInteger(n) && n >= 0),
+    ),
+  );
   const [file, setFile] = useState<File | null>(null);
   const [removeShot, setRemoveShot] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +108,15 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
 
   const toggleMistake = (m: string) =>
     setMistakes((list) => (list.includes(m) ? list.filter((x) => x !== m) : [...list, m]));
+
+  const activePlaybook = playbooks.find((p) => p.id === playbookId) ?? null;
+  const toggleRule = (i: number) =>
+    setRulesHit((set) => {
+      const next = new Set(set);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
 
   const saveConceptList = (next: string[]) => {
     setConceptList(next);
@@ -156,6 +176,8 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
         exitDate: hasExitDate ? new Date(form.exitDate + ":00Z").toISOString() : null,
         strategy: form.strategy || null,
         rr: form.rr.trim() === "" ? null : Number(form.rr),
+        playbookId: playbookId || null,
+        rulesHit: playbookId && rulesHit.size ? [...rulesHit].sort((a, b) => a - b).join(",") : null,
         concepts: concepts.length ? concepts.join(", ") : null,
         mistakes: mistakes.length ? mistakes.join(", ") : null,
         notes: form.notes || null,
@@ -317,6 +339,43 @@ export function TradeFormModal({ trade, accounts, userConcepts, currency, onClos
               <p className="mt-1 text-[11px] text-muted">reward ÷ risk</p>
             </div>
           </div>
+
+          {playbooks.length > 0 && (
+            <div>
+              <label className="field-label">Playbook</label>
+              <select
+                className="field"
+                value={playbookId}
+                onChange={(e) => {
+                  setPlaybookId(e.target.value);
+                  setRulesHit(new Set());
+                }}
+              >
+                <option value="">No playbook</option>
+                {playbooks.map((p) => (
+                  <option key={p.id} value={p.id}>{p.emoji} {p.name}</option>
+                ))}
+              </select>
+              {activePlaybook && (
+                <div className="mt-2 space-y-1.5 rounded-lg border border-edge bg-raised/40 p-3">
+                  <p className="text-xs font-medium text-ink-2">
+                    Checklist — {rulesHit.size}/{activePlaybook.rules.length} followed
+                  </p>
+                  {activePlaybook.rules.map((rule, i) => (
+                    <label key={i} className="flex cursor-pointer items-start gap-2 text-sm text-ink-2">
+                      <input
+                        type="checkbox"
+                        checked={rulesHit.has(i)}
+                        onChange={() => toggleRule(i)}
+                        className="mt-0.5 h-4 w-4 accent-[#e0a63b]"
+                      />
+                      {rule}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <button
             type="button"

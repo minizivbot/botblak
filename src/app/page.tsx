@@ -26,8 +26,13 @@ function gradeClass(grade: string): string {
 /** The trading-day cockpit: plan, session state, rules — before the numbers. */
 export default async function TodayPage() {
   const { userId, isDemo, username } = await getViewer();
+  // Logged-out visitors get the landing page; the live demo lives at /review.
+  if (isDemo) {
+    const { Landing } = await import("@/components/Landing");
+    return <Landing />;
+  }
   if (!userId) redirect("/login");
-  if (!isDemo) await ensureDefaultAccount(userId);
+  await ensureDefaultAccount(userId);
 
   // Brand-new signed-in user with no trades yet → onboarding.
   if (!isDemo) {

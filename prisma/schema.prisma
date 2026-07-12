@@ -31,6 +31,7 @@ model User {
   crewMembership    CrewMember?
   aiReports         AiReport[]
   propTxns          PropTxn[]
+  playbooks         Playbook[]
 }
 
 // Prop-firm business ledger: challenge/reset fees paid out, and payouts pulled
@@ -47,6 +48,22 @@ model PropTxn {
   date      DateTime @default(now())
 
   @@index([userId, date])
+}
+
+// A trader's setup with its rule checklist ("A+ Silver Bullet": 5 rules).
+// Trades link to a playbook and record which rules were followed, so the
+// journal can prove whether following the checklist actually pays.
+model Playbook {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  emoji     String   @default("📘")
+  rules     String // JSON array of rule strings, in order
+  createdAt DateTime @default(now())
+  trades    Trade[]
+
+  @@unique([userId, name])
 }
 
 // A private group of friends who share their aggregate stats with each other.
@@ -128,6 +145,9 @@ model Trade {
   concepts       String? // comma-separated ICT concepts used on the trade
   mistakes       String? // comma-separated mistake tags (revenge, moved stop, ...)
   rr             Float? // risk-reward multiple achieved on the trade (e.g. 2.5 = 2.5R)
+  playbookId     String?
+  playbook       Playbook? @relation(fields: [playbookId], references: [id], onDelete: SetNull)
+  rulesHit       String? // comma-separated indexes of the playbook rules followed
   notes          String?
   screenshotPath String?
   source         String    @default("manual") // "manual" | "csv" | "alpaca" | "tradovate" | "seed"

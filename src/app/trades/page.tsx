@@ -30,7 +30,7 @@ export default async function TradesPage({
     select: { id: true, name: true, isCopy: true },
   });
 
-  const [tradesRaw, settings, user, symbolRows, strategyRows] = await Promise.all([
+  const [tradesRaw, settings, user, symbolRows, strategyRows, playbooksRaw] = await Promise.all([
     prisma.trade.findMany({
       where: { ...filtersToWhere(filters), ...accountWhere(filters, accounts), userId },
       orderBy: { entryDate: "desc" },
@@ -40,7 +40,14 @@ export default async function TradesPage({
     prisma.user.findUnique({ where: { id: userId }, select: { concepts: true } }),
     prisma.trade.findMany({ where: { userId }, distinct: ["symbol"], select: { symbol: true }, orderBy: { symbol: "asc" } }),
     prisma.trade.findMany({ where: { userId, strategy: { not: null } }, distinct: ["strategy"], select: { strategy: true } }),
+    prisma.playbook.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
   ]);
+  const playbooks = playbooksRaw.map((p) => ({
+    id: p.id,
+    name: p.name,
+    emoji: p.emoji,
+    rules: (JSON.parse(p.rules) as string[]) ?? [],
+  }));
 
   const trades = applyKillzoneFilter(tradesRaw, filters);
 
@@ -63,6 +70,7 @@ export default async function TradesPage({
         currency={settings?.currency ?? "USD"}
         accounts={accounts}
         userConcepts={parseConcepts(user?.concepts)}
+        playbooks={playbooks}
         readOnly={isDemo}
       />
     </div>

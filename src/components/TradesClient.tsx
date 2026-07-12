@@ -11,18 +11,21 @@ import { TradeFormModal } from "./TradeFormModal";
 import { ShareButton } from "./ShareButton";
 
 type AccountOption = { id: string; name: string; isCopy: boolean };
+type PlaybookOption = { id: string; name: string; emoji: string; rules: string[] };
 
 export function TradesClient({
   trades,
   currency,
   accounts,
   userConcepts,
+  playbooks = [],
   readOnly = false,
 }: {
   trades: TradeDTO[];
   currency: string;
   accounts: AccountOption[];
   userConcepts: string[];
+  playbooks?: PlaybookOption[];
   readOnly?: boolean;
 }) {
   const router = useRouter();
@@ -194,6 +197,7 @@ export function TradesClient({
           trade={modal.trade}
           accounts={accounts}
           userConcepts={userConcepts}
+          playbooks={playbooks}
           currency={currency}
           onClose={() => setModal({ open: false, trade: null })}
           onSaved={() => {

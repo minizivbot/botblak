@@ -15,6 +15,17 @@ type AccountRow = {
   propMaxDailyLoss: number | null;
 };
 
+// Rule-level presets for the popular futures prop firms — pick one and the
+// challenge numbers fill themselves in (the thing traders always mistype).
+const PROP_PRESETS: { label: string; start: number; target: number; dd: number; ddType: "trailing" | "static" }[] = [
+  { label: "Apex 50K", start: 50000, target: 3000, dd: 2500, ddType: "trailing" },
+  { label: "Apex 150K", start: 150000, target: 9000, dd: 5000, ddType: "trailing" },
+  { label: "TopStep 50K", start: 50000, target: 3000, dd: 2000, ddType: "trailing" },
+  { label: "TopStep 100K", start: 100000, target: 6000, dd: 3000, ddType: "trailing" },
+  { label: "MFFU 50K", start: 50000, target: 3000, dd: 2000, ddType: "static" },
+  { label: "Tradeify 50K", start: 50000, target: 3000, dd: 2000, ddType: "static" },
+];
+
 function PropRulesEditor({ account, onSaved }: { account: AccountRow; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
   const [start, setStart] = useState(account.propStartBalance?.toString() ?? "");
@@ -23,6 +34,15 @@ function PropRulesEditor({ account, onSaved }: { account: AccountRow; onSaved: (
   const [ddType, setDdType] = useState(account.propDrawdownType ?? "trailing");
   const [saving, setSaving] = useState(false);
   const configured = account.propStartBalance != null;
+
+  const applyPreset = (label: string) => {
+    const p = PROP_PRESETS.find((x) => x.label === label);
+    if (!p) return;
+    setStart(String(p.start));
+    setTarget(String(p.target));
+    setDd(String(p.dd));
+    setDdType(p.ddType);
+  };
 
   async function save() {
     setSaving(true);
@@ -52,6 +72,12 @@ function PropRulesEditor({ account, onSaved }: { account: AccountRow; onSaved: (
           <p className="text-xs text-muted">
             Turn this account into a tracked prop challenge. Leave a field empty to skip it.
           </p>
+          <select className="field" defaultValue="" onChange={(e) => applyPreset(e.target.value)} aria-label="Prop firm preset">
+            <option value="" disabled>⚡ Fill from a firm preset…</option>
+            {PROP_PRESETS.map((p) => (
+              <option key={p.label} value={p.label}>{p.label} — ${p.target.toLocaleString()} target · ${p.dd.toLocaleString()} {p.ddType} DD</option>
+            ))}
+          </select>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="field-label">Account size</label>

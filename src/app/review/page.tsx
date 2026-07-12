@@ -28,6 +28,7 @@ import {
 import { mistakeLedger } from "@/lib/mistakes";
 import { dailyGrades } from "@/lib/discipline";
 import { weeklyMonthlyRR } from "@/lib/rr";
+import { computeEdge } from "@/lib/edge";
 import { fmtMoney, fmtSignedMoney, fmtPct, fmtNum, fmtDuration, fmtDateTime } from "@/lib/format";
 import { FilterBar } from "@/components/FilterBar";
 import { StatTile } from "@/components/StatTile";
@@ -134,6 +135,7 @@ export default async function ReviewPage({
   const ledger = mistakeLedger(trades);
   const grades = dailyGrades(trades, settings?.maxDailyLoss ?? null);
   const rrAvg = weeklyMonthlyRR(trades as { rr?: number | null; entryDate: Date }[]);
+  const edge = computeEdge(trades, startingBalance, settings?.maxDailyLoss ?? null);
 
   const returnPct = startingBalance > 0 ? stats.totalPnl / startingBalance : null;
   const recent = closedTrades(trades).slice(-6).reverse();
@@ -230,6 +232,56 @@ export default async function ReviewPage({
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* Edge Score — one honest number for the whole operation */}
+      {edge && (
+        <section className="card">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative h-24 w-24">
+                <svg viewBox="0 0 96 96" className="h-24 w-24 -rotate-90">
+                  <circle cx="48" cy="48" r="40" fill="none" stroke="var(--color-raised)" strokeWidth="9" />
+                  <circle
+                    cx="48"
+                    cy="48"
+                    r="40"
+                    fill="none"
+                    stroke={edge.score >= 70 ? "var(--color-profit)" : edge.score >= 45 ? "var(--color-accent)" : "var(--color-loss)"}
+                    strokeWidth="9"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(edge.score / 100) * 251.3} 251.3`}
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">{edge.score}</span>
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">Edge Score</h2>
+                <p className="text-xs text-muted">
+                  Strongest: <span className="text-profit">{edge.strength}</span> · Work on:{" "}
+                  <span className="text-loss">{edge.weakness}</span>
+                </p>
+              </div>
+            </div>
+            <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
+              {edge.subs.map((s) => (
+                <div key={s.label}>
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-xs text-muted">{s.label}</p>
+                    <p className="text-sm font-bold">{s.score}</p>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-raised">
+                    <div
+                      className={`h-full rounded-full ${s.score >= 70 ? "bg-profit" : s.score >= 45 ? "bg-accent" : "bg-loss"}`}
+                      style={{ width: `${s.score}%` }}
+                    />
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-muted">{s.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
       )}
 
