@@ -6,6 +6,12 @@ import { useState } from "react";
 import { Logo } from "./Logo";
 
 const icons: Record<string, React.ReactNode> = {
+  today: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
+      <circle cx="10" cy="10" r="3.5" />
+      <path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4" strokeLinecap="round" />
+    </svg>
+  ),
   dashboard: (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-[18px] w-[18px]">
       <path d="M3 11l4-6 4 4 3-5 3 4" strokeLinecap="round" strokeLinejoin="round" />
@@ -83,16 +89,17 @@ const icons: Record<string, React.ReactNode> = {
 };
 
 const links = [
-  { href: "/", label: "Dashboard", icon: "dashboard" },
-  { href: "/calendar", label: "Calendar", icon: "calendar" },
-  { href: "/accounts", label: "Accounts", icon: "accounts" },
-  { href: "/trades", label: "Trades", icon: "trades" },
-  { href: "/coach", label: "AI Coach", icon: "coach", pro: true },
-  { href: "/crew", label: "Crew", icon: "crew" },
-  { href: "/achievements", label: "Achievements", icon: "trophy" },
-  { href: "/prop-firms", label: "Prop Firms", icon: "prop" },
-  { href: "/motivation", label: "Daily Motivation", icon: "motivation" },
-  { href: "/learn", label: "Learn", icon: "learn" },
+  { href: "/", label: "Today", icon: "today", section: "Trade" },
+  { href: "/trades", label: "Trades", icon: "trades", section: "Trade" },
+  { href: "/review", label: "Review", icon: "dashboard", section: "Trade" },
+  { href: "/calendar", label: "Calendar", icon: "calendar", section: "Trade" },
+  { href: "/accounts", label: "Business", icon: "accounts", section: "Business" },
+  { href: "/prop-firms", label: "Prop Firms", icon: "prop", section: "Business" },
+  { href: "/coach", label: "AI Coach", icon: "coach", pro: true, section: "Grow" },
+  { href: "/crew", label: "Crew", icon: "crew", section: "Grow" },
+  { href: "/achievements", label: "Achievements", icon: "trophy", section: "Grow" },
+  { href: "/motivation", label: "Motivation", icon: "motivation", section: "Grow" },
+  { href: "/learn", label: "Learn", icon: "learn", section: "Grow" },
 ];
 
 export function Nav({
@@ -123,11 +130,11 @@ export function Nav({
   if (pathname === "/login" || pathname === "/register") return null;
 
   const initial = (username?.[0] ?? "?").toUpperCase();
-  let navLinks: { href: string; label: string; icon: string; pro?: boolean }[] = links.filter(
+  let navLinks: { href: string; label: string; icon: string; pro?: boolean; section?: string }[] = links.filter(
     (l) => (showPropFirms || l.href !== "/prop-firms") && (showCoach || l.href !== "/coach"),
   );
-  if (!isPro) navLinks = [...navLinks, { href: "/pricing", label: "Go Pro", icon: "pro", pro: true }];
-  if (isAdmin) navLinks = [...navLinks, { href: "/admin", label: "Admin", icon: "admin" }];
+  if (!isPro) navLinks = [...navLinks, { href: "/pricing", label: "Go Pro", icon: "pro", pro: true, section: "Grow" }];
+  if (isAdmin) navLinks = [...navLinks, { href: "/admin", label: "Admin", icon: "admin", section: "Grow" }];
 
   const accountBox = authed ? (
     <div className="rounded-xl border border-edge bg-raised/50 p-3">
@@ -178,26 +185,33 @@ export function Nav({
     </div>
   );
 
-  const items = navLinks.map((l) => {
+  const items = navLinks.map((l, i) => {
     const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+    const sectionStart = l.section && navLinks[i - 1]?.section !== l.section;
     return (
-      <Link
-        key={l.href}
-        href={l.href}
-        onClick={() => setOpen(false)}
-        className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-          active ? "bg-raised text-ink" : "text-ink-2 hover:bg-raised/60 hover:text-ink"
-        }`}
-      >
-        {active && <span className="absolute top-1/2 left-0 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent" />}
-        <span className={active ? "text-accent" : "text-muted"}>{icons[l.icon]}</span>
-        {l.label}
-        {l.pro && !isPro && (
-          <span className="ml-auto rounded-full bg-gradient-to-r from-amber-500/20 to-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
-            PRO
-          </span>
+      <div key={l.href}>
+        {sectionStart && (
+          <p className={`px-3 pb-1 text-[10px] font-semibold tracking-[0.14em] text-muted uppercase ${i === 0 ? "pt-0" : "pt-4"}`}>
+            {l.section}
+          </p>
         )}
-      </Link>
+        <Link
+          href={l.href}
+          onClick={() => setOpen(false)}
+          className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+            active ? "bg-raised text-ink" : "text-ink-2 hover:bg-raised/60 hover:text-ink"
+          }`}
+        >
+          {active && <span className="absolute top-1/2 left-0 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent" />}
+          <span className={active ? "text-accent" : "text-muted"}>{icons[l.icon]}</span>
+          {l.label}
+          {l.pro && !isPro && (
+            <span className="ml-auto rounded-full bg-gradient-to-r from-amber-500/20 to-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
+              PRO
+            </span>
+          )}
+        </Link>
+      </div>
     );
   });
 

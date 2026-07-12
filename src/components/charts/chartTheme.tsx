@@ -2,11 +2,11 @@
 
 /** Shared chart tokens (dark surface #1a1a19, palette validated via dataviz checks). */
 export const chart = {
-  grid: "#262a31",
-  axis: "#343943",
-  tick: "#858b96",
-  accent: "#3987e5",
-  profit: "#199e70",
+  grid: "#2a2720",
+  axis: "#3a362c",
+  tick: "#8f8878",
+  accent: "#e0a63b",
+  profit: "#1fa05e",
   loss: "#e66767", // marks keep the CVD-validated red; text uses the brighter --color-loss
 };
 

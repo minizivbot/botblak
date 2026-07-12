@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
-/* Dark-only design tokens (validated against surface #1a1a19) */
+/* Dark-only design tokens — warm graphite + gold identity */
 @theme {
-  --color-page: #0b0c0e;
-  --color-surface: #16181c;
-  --color-raised: #1f2228;
-  --color-ink: #f4f5f7;
-  --color-ink-2: #c0c4cc;
-  --color-muted: #858b96;
-  --color-grid: #262a31;
-  --color-edge: rgba(255, 255, 255, 0.08);
-  --color-edge-strong: rgba(255, 255, 255, 0.14);
-  --color-accent: #3987e5;
-  --color-accent-deep: #1c5cab;
-  --color-profit: #21c162;
-  --color-profit-mark: #199e70;
+  --color-page: #0d0c0a;
+  --color-surface: #16140f;
+  --color-raised: #211e17;
+  --color-ink: #f5f2ea;
+  --color-ink-2: #cbc4b4;
+  --color-muted: #8f8878;
+  --color-grid: #2a2720;
+  --color-edge: rgba(255, 246, 220, 0.09);
+  --color-edge-strong: rgba(255, 246, 220, 0.16);
+  --color-accent: #e0a63b;
+  --color-accent-deep: #a87415;
+  --color-profit: #2ec46a;
+  --color-profit-mark: #1fa05e;
   --color-loss: #f0645f;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -42,13 +42,13 @@ body::after {
   pointer-events: none;
 }
 body::before {
-  background: radial-gradient(circle, rgba(57, 135, 229, 0.16), transparent 65%);
+  background: radial-gradient(circle, rgba(224, 166, 59, 0.13), transparent 65%);
   top: -22vmax;
   right: -14vmax;
   animation: drift-a 16s ease-in-out infinite alternate;
 }
 body::after {
-  background: radial-gradient(circle, rgba(25, 158, 112, 0.13), transparent 65%);
+  background: radial-gradient(circle, rgba(31, 160, 94, 0.1), transparent 65%);
   bottom: -26vmax;
   left: -16vmax;
   animation: drift-b 20s ease-in-out infinite alternate;
@@ -65,7 +65,7 @@ body::after {
 }
 
 ::selection {
-  background: rgba(57, 135, 229, 0.35);
+  background: rgba(224, 166, 59, 0.35);
 }
 
 /* Form controls */
@@ -109,10 +109,10 @@ body::after {
 @keyframes glow {
   0%,
   100% {
-    box-shadow: 0 2px 12px rgba(57, 135, 229, 0.35);
+    box-shadow: 0 2px 12px rgba(224, 166, 59, 0.35);
   }
   50% {
-    box-shadow: 0 2px 22px rgba(25, 158, 112, 0.45);
+    box-shadow: 0 2px 22px rgba(31, 160, 94, 0.45);
   }
 }
 
@@ -141,7 +141,7 @@ main .grid > .card:nth-child(4) {
 .logo-mark {
   background:
     radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.4), transparent 55%),
-    linear-gradient(135deg, #3987e5, #2f6fd0 55%, #199e70);
+    linear-gradient(135deg, #e0a63b, #c98a1c 55%, #1fa05e);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.25),
     inset 0 -6px 10px rgba(0, 0, 0, 0.18);
